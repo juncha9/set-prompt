@@ -1,0 +1,46 @@
+{
+  "name": "@alkemic-studio/set-prompt-cli",
+  "version": "0.1.0",
+  "description": "Universal Prompt Manager for AI Coding Tools (OpenClaw, Claude Code, Roo Code)",
+  "main": "dist/index.js",
+  "bin": {
+    "set-prompt": "./bin/set-prompt.js"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src",
+    "test": "vitest"
+  },
+  "keywords": [
+    "prompt-manager",
+    "ai-coding",
+    "openclaw",
+    "claude-code",
+    "roo-code"
+  ],
+  "author": "Alkemic Studio",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "figlet": "^1.10.0",
+    "inquirer": "^13.2.5",
+    "js-yaml": "^4.1.1",
+    "ora": "^9.3.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/figlet": "^1.7.0",
+    "@types/inquirer": "^9.0.9",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.3.0",
+    "eslint": "^10.0.1",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
