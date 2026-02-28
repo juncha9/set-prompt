@@ -1,0 +1,14 @@
+.claude/
+.roo/
+.git/
+.gitignore/
+.vscode/
+
+node_modules/
+
+[Ss]rc/
+tsconfig*.json
+tsup*.config.ts
+
+.env*
+!.env.example
