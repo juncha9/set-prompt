@@ -1,17 +1,44 @@
 import fs from 'fs';
 import { parse, stringify } from 'smol-toml';
 import chalk from 'chalk';
-import { GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_PATH } from '@/_defs/index';
-import type { GlobalConfig } from '@/_types/index';
+import { HOME_DIR, CONFIG_PATH, TAB } from '@/_defs';
+import type { GlobalConfig } from '@/_types';
+import typia from 'typia';
+export { HOME_DIR as GLOBAL_CONFIG_DIR, CONFIG_PATH as GLOBAL_CONFIG_PATH };
 
-export { GLOBAL_CONFIG_DIR, GLOBAL_CONFIG_PATH };
-export type { GlobalConfig };
+export const setConfig = (config: GlobalConfig):boolean => {
+    try {
+        fs.mkdirSync(HOME_DIR, { recursive: true });
+        fs.writeFileSync(CONFIG_PATH, stringify(config as unknown as Record<string, unknown>), 'utf-8');
 
-export function readGlobalConfig(): GlobalConfig {
-  if (!fs.existsSync(GLOBAL_CONFIG_PATH)) {
-    console.log(chalk.red('No prompt source registered.'));
-    console.log(chalk.yellow('Run: set-prompt use <local-path or git-url>'));
-    process.exit(1);
-  }
-  return parse(fs.readFileSync(GLOBAL_CONFIG_PATH, 'utf-8')) as unknown as GlobalConfig;
+        console.log('\n' + chalk.green(`Config saved at ${chalk.dim(CONFIG_PATH)}`));
+        console.log(`${TAB}repo_path: ${chalk.dim(config.repo_path)}`);
+        if (config.remote_url != null) {
+            console.log(`${TAB}remote_url : ${chalk.dim(config.remote_url)}`);
+        }
+        return true;
+    }
+    catch (ex:any) { 
+        console.error(chalk.red(`Failed to save config at ${CONFIG_PATH}, `), ex.message);
+        return false;
+    }
+
+}
+
+export const getConfig = (): GlobalConfig | null => {
+    if (fs.existsSync(CONFIG_PATH) == false) {
+        return null;
+    }
+
+    try {
+        const textData = fs.readFileSync(CONFIG_PATH, 'utf-8');
+        const _config = parse(textData);
+
+        typia.assert<GlobalConfig>(_config);
+        return _config as any as GlobalConfig;
+    }
+    catch (ex:any) {
+        console.error(chalk.red(`Failed to parse config at ${CONFIG_PATH}, `), ex.message);
+        return null;
+    }
 }

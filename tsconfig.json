@@ -19,7 +19,7 @@
         "noImplicitAny": false,
     },
     "include": [
-        "src/**/*.ts",
+        "src/**/*.ts", "src/commands/apply-command",
     ],
     "exclude": [
         "node_modules",

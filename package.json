@@ -19,7 +19,7 @@
         "ai-coding",
         "openclaw",
         "claude-code",
-        "roo-code" 
+        "roo-code"
     ],
     "author": "Alkemic Studio",
     "license": "MIT",
@@ -28,12 +28,14 @@
         "chalk": "^5.6.2",
         "commander": "^14.0.3",
         "figlet": "^1.10.0",
+        "fs-extra": "^11.3.3",
         "ora": "^9.3.0",
         "smol-toml": "^1.6.0",
-        "zod": "^4.3.6"
+        "typia": "^11.0.3"
     },
     "devDependencies": {
         "@types/figlet": "^1.7.0",
+        "@types/fs-extra": "^11.0.4",
         "@types/node": "^25.3.0",
         "cpx": "^1.5.0",
         "eslint": "^10.0.1",

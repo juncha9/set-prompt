@@ -31,7 +31,7 @@ Creates:
 
 ```
 my-prompts/
-├── set-prompt.yaml          # repository metadata
+├── SEET_PROMPT_GUIDE.md   # This file (instructions for using the repo)
 ├── skills/
 │   └── <skill-name>/
 │       ├── SKILL.md         # platform-specific frontmatter + prompt content
@@ -99,11 +99,8 @@ src/
 │   └── use.ts               # set-prompt use <source>
 ├── utils/
 │   └── config.ts            # GlobalConfig, ~/.set-prompt/config.yaml
-└── templates/repo/          # Copied to dist/templates/repo/ at build time
-    ├── set-prompt.yaml       # {{name}}, {{version}}, {{description}}, {{author}}
-    ├── README.md             # {{name}}, {{description}}
-    ├── skills/.gitkeep
-    └── commands/.gitkeep
+└── templates/          # Copied to dist/templates/repo/ at build time
+    ├── SEET_PROMPT_GUIDE.md   # This file (instructions for using the repo)
 ```
 
 ## Global Config
