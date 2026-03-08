@@ -2,7 +2,7 @@ import path from 'path';
 import chalk from 'chalk';
 import { pathExists } from 'fs-extra';
 import { TAB } from '@/_defs';
-import { getConfig } from '@/_utils';
+import { getConfig } from '@/_libs/config';
 
 const REQUIRED_DIRS = ['skills', 'commands'] as const;
 const OPTIONAL_DIRS = ['hooks'] as const;

@@ -8,7 +8,7 @@ import { checkbox } from '@inquirer/prompts';
 import { setupCommand } from '@/commands/setup-command';
 import { applyClaudeCode, applyRoocode, applyOpenclaw } from '@/commands/apply-command';
 import { validateCommand } from '@/commands/validate-command';
-import { getConfig } from '@/_utils/index';
+import { getConfig } from '@/_libs/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'));
@@ -56,9 +56,9 @@ program
         }
 
         for (const agent of agents) {
-            if (agent === 'claude-code') await applyClaudeCode(config.repo_path);
-            else if (agent === 'roocode') await applyRoocode(config.repo_path);
-            else if (agent === 'openclaw') await applyOpenclaw(config.repo_path);
+            if (agent === 'claude-code') await applyClaudeCode();
+            else if (agent === 'roocode') await applyRoocode();
+            else if (agent === 'openclaw') await applyOpenclaw();
         }
     });
 

@@ -92,25 +92,39 @@ See the [frontmatter reference](https://github.com/alkemic-studio/set-prompt#fro
 
 ```
 src/
-├── bin/set-prompt.ts        # bin entry (shebang)
+├── bin/set-prompt.js        # bin entry (shebang)
 ├── index.ts                 # Commander setup, banner logic
 ├── commands/
-│   ├── init.ts              # set-prompt init [path]
-│   └── use.ts               # set-prompt use <source>
-├── utils/
-│   └── config.ts            # GlobalConfig, ~/.set-prompt/config.yaml
-└── templates/          # Copied to dist/templates/repo/ at build time
-    ├── SEET_PROMPT_GUIDE.md   # This file (instructions for using the repo)
+│   ├── apply-command.ts     # logic for applying prompts to AI tools
+│   ├── setup-command.ts     # logic for `set-prompt use` (registering sources)
+│   └── validate-command.ts  # logic for `set-prompt validate`
+├── _defs/
+│   └── index.ts             # constants and definitions
+├── _types/
+│   └── index.ts             # shared TypeScript types
+├── _libs/
+│   ├── config.ts            # GlobalConfig read/write (~/.set-prompt/config.toml)
+│   └── index.ts             # common utility functions
+└── templates/               # Copied to dist/templates/ at build time
+    └── SET_PROMPT_GUIDE.md  # template injected into new prompt repos
 ```
 
 ## Global Config
 
-Registered via `set-prompt use <source>`, stored at `~/.set-prompt/config.yaml`.
+Registered via `set-prompt use <source>`, stored at `~/.set-prompt/config.toml`.
+
+```
+~/.set-prompt/
+├── config.toml         # global config (remote_url, repo_path)
+└── repo/               # remote repos cloned here
+    └── <repo-name>/     # e.g. my-prompts
+        ├── skills/
+        └── commands/
+```
 
 ```typescript
 interface GlobalConfig {
-  source: string;    // original input (local path or git URL)
-  localPath: string; // resolved local path (git URLs cloned to ~/.set-prompt/cache/)
-  updatedAt: string;
+  remote_url: string;    // original URL (git URL or local path)
+  repo_path: string; // local path where repo is located (same as remote_url if local, or ~/.set-prompt/repo/<repo-name> if remote)
 }
 ```

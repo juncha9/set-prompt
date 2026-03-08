@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { confirm } from '@inquirer/prompts';
 import { HOME_DIR, CONFIG_PATH } from '@/_defs';
-import { getConfig, setConfig } from '@/_utils';
+import { getConfig, setConfig } from '@/_libs/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

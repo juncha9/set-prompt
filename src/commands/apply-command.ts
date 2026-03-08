@@ -1,25 +1,48 @@
 import path from 'path';
+import fs from 'fs';
 import { spawnSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import { confirm } from '@inquirer/prompts';
-import { copy, pathExists } from 'fs-extra';
+import { pathExists } from 'fs-extra';
 import { CLAUDE_CODE_DIR } from '@/_defs';
+import { getConfig } from '@/_libs/config';
 
 const spinner = ora();
 
-export const applyClaudeCode = async (repoPath: string): Promise<void> => {
+const resolveRepoPath = (): string | null => {
+    const config = getConfig();
+    if (!config) {
+        console.error(chalk.red('No prompt source registered.'));
+        console.log(chalk.yellow('Run: set-prompt use <local-path or git-url>'));
+        return null;
+    }
+    return config.repo_path;
+};
+
+export const applyClaudeCode = async (): Promise<void> => {
+    const repoPath = resolveRepoPath();
+    if (!repoPath) return;
+
     const dirs = ['skills', 'commands', 'hooks'];
+
+    fs.mkdirSync(CLAUDE_CODE_DIR, { recursive: true });
 
     for (const dir of dirs) {
         const src = path.join(repoPath, dir);
         const dest = path.join(CLAUDE_CODE_DIR, dir);
-        if (await pathExists(src)) {
-            await copy(src, dest, { overwrite: true });
+
+        if (!(await pathExists(src))) continue;
+
+        if (fs.existsSync(dest)) {
+            fs.rmSync(dest, { recursive: true, force: true });
         }
+
+        fs.symlinkSync(src, dest, 'junction');
+        console.log(chalk.dim(`  linked: ${dir}/ → ${src}`));
     }
 
-    console.log(chalk.green(`\nPlugin built: ${chalk.dim(CLAUDE_CODE_DIR)}`));
+    console.log(chalk.green(`\nPlugin ready: ${chalk.dim(CLAUDE_CODE_DIR)}`));
 
     const doInstall = await confirm({
         message: 'Run "claude plugin install" now?',
@@ -40,10 +63,12 @@ export const applyClaudeCode = async (repoPath: string): Promise<void> => {
     }
 };
 
-export const applyRoocode = async (_repoPath: string): Promise<void> => {
+export const applyRoocode = async (): Promise<void> => {
+    if (!resolveRepoPath()) return;
     console.log(chalk.yellow('RooCode integration is not yet implemented.'));
 };
 
-export const applyOpenclaw = async (_repoPath: string): Promise<void> => {
+export const applyOpenclaw = async (): Promise<void> => {
+    if (!resolveRepoPath()) return;
     console.log(chalk.yellow('OpenClaw integration is not yet implemented.'));
 };
