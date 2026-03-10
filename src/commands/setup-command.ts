@@ -50,7 +50,7 @@ const setupRepo = async (localPath: string): Promise<void> => {
         }
 
         if (writeGuide) {
-            const guideContent = fs.readFileSync(path.join(__dirname, 'templates/SET_PROMPT_GUIDE.md'), 'utf-8');
+            const guideContent = fs.readFileSync(path.join(__dirname, '../templates/SET_PROMPT_GUIDE.md'), 'utf-8');
             fs.writeFileSync(guidePath, guideContent, 'utf-8');
             createdFiles.push('  SET_PROMPT_GUIDE.md');
         }

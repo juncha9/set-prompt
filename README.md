@@ -85,8 +85,18 @@ See the [frontmatter reference](https://github.com/alkemic-studio/set-prompt#fro
 
 - Node.js ESM, TypeScript (`moduleResolution: NodeNext`)
 - CLI: Commander.js, Inquirer, Chalk, Ora
-- Build: `tsc && npm run copy_templates` (static templates copied separately)
+- Build: `tsup` + cpx for static templates
+- Test: Vitest, `@vitest/coverage-v8`, memfs (in-memory FS mocking)
 - Dev: `npx tsx src/index.ts <command>`
+
+## Dev Commands
+
+```bash
+npx tsx src/index.ts <command>   # Run without building
+npm run build                    # tsup + copy bin/templates
+npm test                         # Run tests with vitest
+npm test -- --coverage           # Run tests with coverage report
+```
 
 ## Source Structure
 

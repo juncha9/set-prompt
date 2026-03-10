@@ -38,7 +38,8 @@ export const applyClaudeCode = async (): Promise<void> => {
             fs.rmSync(dest, { recursive: true, force: true });
         }
 
-        fs.symlinkSync(src, dest, 'junction');
+        const symlinkType = process.platform === 'win32' ? 'junction' : 'dir';
+        fs.symlinkSync(src, dest, symlinkType);
         console.log(chalk.dim(`  linked: ${dir}/ → ${src}`));
     }
 
