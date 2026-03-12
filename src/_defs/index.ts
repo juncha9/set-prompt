@@ -9,3 +9,4 @@ export const REPO_DIR = path.join(HOME_DIR, 'repo');
 export const CLAUDE_CODE_DIR = path.join(HOME_DIR, 'claude-code');
 
 export const REPO_CONFIG_FILENAME = 'set-prompt.toml';
+export const REPO_DIRS = ['skills', 'commands', 'hooks'] as const;

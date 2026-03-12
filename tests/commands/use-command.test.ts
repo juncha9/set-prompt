@@ -32,13 +32,13 @@ vi.mock('@/_libs/config', () => ({
     getConfig: vi.fn(),
 }));
 
-const { applyClaudeCode } = await import('@/commands/apply-command');
+const { useClaudeCode } = await import('@/commands/use-command');
 const { getConfig } = await import('@/_libs/config');
 const { pathExists } = await import('fs-extra');
 const { confirm } = await import('@inquirer/prompts');
 const { spawnSync } = await import('child_process');
 
-describe('applyClaudeCode', () => {
+describe('useClaudeCode', () => {
     beforeEach(() => {
         vol.reset();
         vi.clearAllMocks();
@@ -47,17 +47,17 @@ describe('applyClaudeCode', () => {
     it('config 없으면 즉시 종료 (CLAUDE_CODE_DIR 미생성)', async () => {
         vi.mocked(getConfig).mockReturnValue(null);
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         expect(() => vol.statSync(CLAUDE_CODE_DIR)).toThrow();
     });
 
     it('src 디렉토리 없으면 심볼릭 링크 생성 안 함', async () => {
         vi.mocked(getConfig).mockReturnValue({ repo_path: '/my/repo' });
-        vi.mocked(pathExists).mockResolvedValue(false);
+        vi.mocked(pathExists).mockResolvedValue(false as any);
         vi.mocked(confirm).mockResolvedValue(false);
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         // CLAUDE_CODE_DIR은 생성되지만 내부는 비어 있어야 함
         const entries = vol.readdirSync(CLAUDE_CODE_DIR);
@@ -72,7 +72,7 @@ describe('applyClaudeCode', () => {
         );
         vi.mocked(confirm).mockResolvedValue(false);
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         const dest = path.join(CLAUDE_CODE_DIR, 'skills');
         expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
@@ -82,10 +82,10 @@ describe('applyClaudeCode', () => {
     it('여러 디렉토리(skills, commands, hooks) 모두 링크', async () => {
         const repoPath = '/my/repo';
         vi.mocked(getConfig).mockReturnValue({ repo_path: repoPath });
-        vi.mocked(pathExists).mockResolvedValue(true);
+        vi.mocked(pathExists).mockResolvedValue(true as any);
         vi.mocked(confirm).mockResolvedValue(false);
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         for (const dir of ['skills', 'commands', 'hooks']) {
             const dest = path.join(CLAUDE_CODE_DIR, dir);
@@ -106,7 +106,7 @@ describe('applyClaudeCode', () => {
             [path.join(CLAUDE_CODE_DIR, 'skills', 'old-skill.md')]: '# old',
         });
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         const dest = path.join(CLAUDE_CODE_DIR, 'skills');
         // 기존 디렉토리가 심볼릭 링크로 교체되어야 함
@@ -115,21 +115,21 @@ describe('applyClaudeCode', () => {
 
     it('사용자가 install 거부하면 spawnSync 미호출', async () => {
         vi.mocked(getConfig).mockReturnValue({ repo_path: '/my/repo' });
-        vi.mocked(pathExists).mockResolvedValue(false);
+        vi.mocked(pathExists).mockResolvedValue(false as any);
         vi.mocked(confirm).mockResolvedValue(false);
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         expect(spawnSync).not.toHaveBeenCalled();
     });
 
     it('사용자가 install 확인하면 claude plugin install 실행', async () => {
         vi.mocked(getConfig).mockReturnValue({ repo_path: '/my/repo' });
-        vi.mocked(pathExists).mockResolvedValue(false);
+        vi.mocked(pathExists).mockResolvedValue(false as any);
         vi.mocked(confirm).mockResolvedValue(true);
         vi.mocked(spawnSync).mockReturnValue({ status: 0, stderr: null } as any);
 
-        await applyClaudeCode();
+        await useClaudeCode();
 
         expect(spawnSync).toHaveBeenCalledWith(
             'claude',
@@ -140,7 +140,7 @@ describe('applyClaudeCode', () => {
 
     it('plugin install 실패 시 에러 표시 (process 종료 안 함)', async () => {
         vi.mocked(getConfig).mockReturnValue({ repo_path: '/my/repo' });
-        vi.mocked(pathExists).mockResolvedValue(false);
+        vi.mocked(pathExists).mockResolvedValue(false as any);
         vi.mocked(confirm).mockResolvedValue(true);
         vi.mocked(spawnSync).mockReturnValue({
             status: 1,
@@ -148,6 +148,6 @@ describe('applyClaudeCode', () => {
         } as any);
 
         // 에러가 throw되지 않고 gracefully 처리되어야 함
-        await expect(applyClaudeCode()).resolves.not.toThrow();
+        await expect(useClaudeCode()).resolves.not.toThrow();
     });
 });

@@ -2,8 +2,8 @@ import fs from 'fs';
 import { parse, stringify } from 'smol-toml';
 import chalk from 'chalk';
 import { HOME_DIR, CONFIG_PATH, TAB } from '@/_defs';
+import { GlobalConfigSchema } from '@/_types';
 import type { GlobalConfig } from '@/_types';
-import typia from 'typia';
 export { HOME_DIR as GLOBAL_CONFIG_DIR, CONFIG_PATH as GLOBAL_CONFIG_PATH };
 
 export const setConfig = (config: GlobalConfig):boolean => {
@@ -34,8 +34,7 @@ export const getConfig = (): GlobalConfig | null => {
         const textData = fs.readFileSync(CONFIG_PATH, 'utf-8');
         const _config = parse(textData);
 
-        typia.assert<GlobalConfig>(_config);
-        return _config as any as GlobalConfig;
+        return GlobalConfigSchema.parse(_config);
     }
     catch (ex:any) {
         console.error(chalk.red(`Failed to parse config at ${CONFIG_PATH}, `), ex.message);

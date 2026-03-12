@@ -20,6 +20,7 @@
     },
     "include": [
         "src/**/*.ts", "src/commands/apply-command",
+        "tests/**/*.ts",
     ],
     "exclude": [
         "node_modules",

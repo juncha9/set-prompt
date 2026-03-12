@@ -1,14 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import { confirm } from '@inquirer/prompts';
-import { HOME_DIR, CONFIG_PATH } from '@/_defs';
+import { HOME_DIR, CONFIG_PATH, REPO_DIRS } from '@/_defs';
 import { getConfig, setConfig } from '@/_libs/config';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { SET_PROMPT_GUIDE } from '@/_libs/templates';
 
 const isGitUrl = (source: string): boolean => (
     source.startsWith('http://') ||
@@ -50,12 +48,10 @@ const setupRepo = async (localPath: string): Promise<void> => {
         }
 
         if (writeGuide) {
-            const guideContent = fs.readFileSync(path.join(__dirname, '../templates/SET_PROMPT_GUIDE.md'), 'utf-8');
-            fs.writeFileSync(guidePath, guideContent, 'utf-8');
+            fs.writeFileSync(guidePath, SET_PROMPT_GUIDE, 'utf-8');
             createdFiles.push('  SET_PROMPT_GUIDE.md');
         }
 
-        const REPO_DIRS = ['skills', 'commands', 'hooks'];
         for (const dir of REPO_DIRS) {
             const dirPath = path.join(localPath, dir);
             if (fs.existsSync(dirPath)) {
@@ -76,7 +72,7 @@ const setupRepo = async (localPath: string): Promise<void> => {
     }
 };
 
-export const setupCommand = async (target?: string): Promise<void> => {
+export const loadCommand = async (target?: string): Promise<void> => {
     try {
         const _target = target ?? process.cwd();
         let isRemoteGit = false;

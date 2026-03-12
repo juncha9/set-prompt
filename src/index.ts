@@ -5,9 +5,10 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { checkbox } from '@inquirer/prompts';
-import { setupCommand } from '@/commands/setup-command';
-import { applyClaudeCode, applyRoocode, applyOpenclaw } from '@/commands/apply-command';
+import { loadCommand } from '@/commands/load-command';
+import { useClaudeCode, useRoocode, useOpenclaw } from '@/commands/use-command';
 import { validateCommand } from '@/commands/validate-command';
+import { unloadCommand } from '@/commands/unload-command';
 import { getConfig } from '@/_libs/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,7 +34,7 @@ program
             process.exit(1);
         }
 
-        await setupCommand(source);
+        await loadCommand(source);
         const config = getConfig();
         if (config == null) {
             console.log(chalk.red('No prompt source registered.'));
@@ -56,9 +57,37 @@ program
         }
 
         for (const agent of agents) {
-            if (agent === 'claude-code') await applyClaudeCode();
-            else if (agent === 'roocode') await applyRoocode();
-            else if (agent === 'openclaw') await applyOpenclaw();
+            if (agent === 'claude-code') await useClaudeCode();
+            else if (agent === 'roocode') await useRoocode();
+            else if (agent === 'openclaw') await useOpenclaw();
+        }
+    });
+
+program
+    .command('use')
+    .description('Apply prompt source to AI agents')
+    .argument('[agent]', 'claude-code | roocode | openclaw (omit for interactive)')
+    .action(async (agent?: string) => {
+        if (agent === 'claude-code') { await useClaudeCode(); return; }
+        if (agent === 'roocode')     { await useRoocode();    return; }
+        if (agent === 'openclaw')    { await useOpenclaw();   return; }
+        if (agent) {
+            console.log(chalk.red(`Unknown agent: ${agent}`));
+            process.exit(1);
+        }
+
+        const agents = await checkbox({
+            message: 'Which AI agent do you want to integrate?',
+            choices: [
+                { name: 'Claude Code', value: 'claude-code' },
+                { name: 'RooCode',     value: 'roocode'     },
+                { name: 'OpenClaw',    value: 'openclaw'    },
+            ],
+        });
+        for (const a of agents) {
+            if (a === 'claude-code') await useClaudeCode();
+            else if (a === 'roocode')  await useRoocode();
+            else if (a === 'openclaw') await useOpenclaw();
         }
     });
 
@@ -68,6 +97,13 @@ program
     .argument('[local-path]', 'Path to the prompt repo (overrides config)')
     .action(async (localPath?: string) => {
         await validateCommand(localPath);
+    });
+
+program
+    .command('unload')
+    .description('Remove all set-prompt data (config, Claude Code plugin dir, home dir)')
+    .action(async () => {
+        await unloadCommand();
     });
 
 program.parse(process.argv);
