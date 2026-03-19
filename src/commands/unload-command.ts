@@ -19,7 +19,7 @@ export const unloadCommand = async (): Promise<void> => {
     targets.forEach(t => console.log(`  ${t.label}`));
 
     const ok = await confirm({ message: 'Proceed?', default: false });
-    if (!ok) {
+    if (ok === false) {
         console.log(chalk.yellow('Cancelled.'));
         return;
     }

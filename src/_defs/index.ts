@@ -10,3 +10,17 @@ export const CLAUDE_CODE_DIR = path.join(HOME_DIR, 'claude-code');
 
 export const REPO_CONFIG_FILENAME = 'set-prompt.toml';
 export const REPO_DIRS = ['skills', 'commands', 'hooks'] as const;
+
+export enum TOOLS {
+    CLAUDE_CODE = 'claude_code',
+    ROOCODE = 'roocode',
+    OPENCLAW = 'openclaw',
+}
+
+export type AgentId = TOOLS;
+
+export const ALL_AGENTS = [
+    { name: 'Claude Code', value: TOOLS.CLAUDE_CODE },
+    { name: 'RooCode',     value: TOOLS.ROOCODE },
+    { name: 'OpenClaw',    value: TOOLS.OPENCLAW },
+] as const;

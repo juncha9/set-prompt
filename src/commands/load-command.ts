@@ -4,43 +4,34 @@ import { spawnSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import { confirm } from '@inquirer/prompts';
-import { HOME_DIR, CONFIG_PATH, REPO_DIRS } from '@/_defs';
-import { getConfig, setConfig } from '@/_libs/config';
+import { HOME_DIR, REPO_DIRS } from '@/_defs';
+import { configManager } from '@/_libs/config';
 import { SET_PROMPT_GUIDE } from '@/_libs/templates';
+import { isGitUrl } from '@/_libs';
 
-const isGitUrl = (source: string): boolean => (
-    source.startsWith('http://') ||
-    source.startsWith('https://') ||
-    source.startsWith('git@') ||
-    source.startsWith('ssh://') ||
-    (source.endsWith('.git') && (source.startsWith('http') || source.startsWith('git@') || source.startsWith('ssh://')))
-);
-
-const setupRepo = async (localPath: string): Promise<void> => {
-    //setup repo structure (SET_PROMPT_GUIDE.md + ...)
+// Returns true if setup was performed, false if skipped
+const setupRepo = async (localPath: string): Promise<boolean> => {
     const createdFiles: string[] = [];
 
     const willSetup = await confirm({
         message: `repo structure will be set up in the provided directory. Do you want to proceed?`,
         default: true,
     });
-    
+
     if (willSetup == false) {
         console.log(chalk.yellow('Repo structure setup skipped.'));
-        return;
-    }   
+        return false;
+    }
 
     try {
-        // SET_PROMPT_GUIDE.md
         const guidePath = path.join(localPath, 'SET_PROMPT_GUIDE.md');
         let writeGuide = true;
 
         if (fs.existsSync(guidePath)) {
             writeGuide = await confirm({
-                message: ' SET_PROMPT_GUIDE.md already exists. Overwrite it?',
+                message: 'SET_PROMPT_GUIDE.md already exists. Overwrite it?',
                 default: false,
             });
-
             if (writeGuide) {
                 fs.renameSync(guidePath, guidePath + '.bak');
                 createdFiles.push('  SET_PROMPT_GUIDE.md.bak (renamed from SET_PROMPT_GUIDE.md)');
@@ -66,93 +57,109 @@ const setupRepo = async (localPath: string): Promise<void> => {
             console.log('\n' + chalk.green('Created:'));
             createdFiles.forEach((line) => console.log(line));
         }
-    } catch (ex:any) {
+
+        return true;
+    } catch (ex: any) {
         console.error(chalk.red(`Error setting up repo structure: ${ex.message}`));
         throw ex;
     }
 };
 
-export const loadCommand = async (target?: string): Promise<void> => {
+// Returns true on success, false if cancelled
+const loadRemoteRepo = async (remoteUrl: string): Promise<boolean> => {
+    const proceed = await confirm({
+        message: `Clone and register remote repo "${remoteUrl}"?`,
+        default: true,
+    });
+    if (proceed === false) {
+        console.log(chalk.yellow('Cancelled.'));
+        return false;
+    }
+
+    const localPath = path.join(HOME_DIR, 'repo');
+    const spinner = ora();
+
+    if (fs.existsSync(localPath)) {
+        console.warn(chalk.yellow(`Existing repo found at ${localPath}. Backing it up before proceeding.`));
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupPath = path.join(HOME_DIR, `repo.bak.${timestamp}`);
+        fs.renameSync(localPath, backupPath);
+        console.log(chalk.yellow(`Existing repo backed up to: ${backupPath}`));
+    }
+
+    if (fs.existsSync(localPath)) {
+        spinner.start('Pulling latest...');
+        const result = spawnSync('git', ['pull'], { cwd: localPath, stdio: 'pipe' });
+        if (result.status !== 0) {
+            spinner.fail('Failed to pull. Check your git credentials.');
+            process.exit(1);
+        }
+        spinner.succeed('Pulled latest.');
+    } else {
+        fs.mkdirSync(path.dirname(localPath), { recursive: true });
+        spinner.start(`Cloning ${remoteUrl}...`);
+        const result = spawnSync('git', ['clone', remoteUrl, localPath], { stdio: 'pipe' });
+        if (result.status !== 0) {
+            spinner.fail('Failed to clone repository. Check the URL and your git credentials.');
+            process.exit(1);
+        }
+        spinner.succeed('Cloned successfully.');
+    }
+
+    await setupRepo(localPath);
+
+    if (configManager.save({ repo_path: localPath, remote_url: remoteUrl, claude_code: configManager.claude_code, roocode: configManager.roocode, openclaw: configManager.openclaw }) === false) {
+        console.error(chalk.red('Failed to save config. Please check the error message above and try again.'));
+        return false;
+    }
+    return true;
+};
+
+// Returns true on success, false if cancelled
+const loadLocalRepo = async (target: string): Promise<boolean> => {
+    const localPath = path.resolve(target);
+
+    if (fs.existsSync(localPath) === false) {
+        console.error(chalk.red(`Path does not exist, [${localPath}]`));
+        process.exit(1);
+    }
+
+    if (fs.statSync(localPath).isDirectory() === false) {
+        console.error(chalk.red(`Path is not a directory, [${localPath}]`));
+        process.exit(1);
+    }
+
+    const proceed = await confirm({
+        message: `Register local repo at "${localPath}"?`,
+        default: true,
+    });
+    if (proceed === false) {
+        console.log(chalk.yellow('Cancelled.'));
+        return false;
+    }
+
+    await setupRepo(localPath);
+
+    if (configManager.save({ repo_path: localPath, remote_url: null, claude_code: configManager.claude_code, roocode: configManager.roocode, openclaw: configManager.openclaw }) === false) {
+        console.error(chalk.red('Failed to save config. Please check the error message above and try again.'));
+        return false;
+    }
+    return true;
+};
+
+export const loadCommand = async (target?: string): Promise<boolean> => {
     try {
         const _target = target ?? process.cwd();
-        let isRemoteGit = false;
-        let localPath: string;
 
+        let result: boolean;
         if (isGitUrl(_target) == true) {
-            isRemoteGit = true;
-            localPath = path.join(HOME_DIR, 'repo');
-            const spinner = ora();
-
-            if (fs.existsSync(localPath) == true) {
-                console.warn(chalk.yellow(`Existing repo found at ${localPath}. Backing it up before proceeding.`));
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-                const backupPath = path.join(HOME_DIR, `repo.bak.${timestamp}`);
-                fs.renameSync(localPath, backupPath);
-                console.log(chalk.yellow(`Existing repo backed up to: ${backupPath}`));
-            }
-
-            if (fs.existsSync(localPath) == true) {
-                spinner.start('Pulling latest...');
-                const result = spawnSync('git', ['pull'], { cwd: localPath, stdio: 'pipe' });
-                if (result.status !== 0) {
-                    spinner.fail('Failed to pull. Check your git credentials.');
-                    process.exit(1);
-                }
-                spinner.succeed('Pulled latest.');
-            } else {
-                const dirName = path.dirname(localPath);
-                fs.mkdirSync(dirName, { recursive: true });
-                spinner.start(`Cloning ${_target}...`);
-                const result = spawnSync('git', ['clone', _target, localPath], { stdio: 'pipe' });
-                if (result.status !== 0) {
-                    spinner.fail('Failed to clone repository. Check the URL and your git credentials.');
-                    process.exit(1);
-                }
-                spinner.succeed('Cloned successfully.');
-            }
-
+            result = await loadRemoteRepo(_target);
         } else {
-            localPath = path.resolve(_target);
-
-            if (fs.existsSync(localPath) == false) {
-                console.error(chalk.red(`Path does not exist, [${localPath}]`));
-                process.exit(1);
-            }
-
-            if (fs.statSync(localPath).isDirectory() == false) {
-                console.error(chalk.red(`Path is not a directory, [${localPath}]`));
-                process.exit(1);
-            }
+            result = await loadLocalRepo(_target);
         }
-
-        await setupRepo(localPath);
-
-        
-        let configResult:boolean = false;
-        if (isRemoteGit == true) {
-            configResult = setConfig({
-                repo_path: localPath,
-                remote_url: _target,
-            });
-        } else {
-            configResult = setConfig({
-                repo_path: localPath,
-            });
-        }
-
-        if (configResult == false) {
-            console.error(chalk.red('Failed to save config. Please check the error message above and try again.'));
-            process.exit(1);
-        }
-
-        const config = getConfig();
-        if (config == null) {
-            console.error(chalk.red('Failed to load config after saving. Please check the error message above and try again.'));
-            process.exit(1);
-        }
-
-    }
-    catch(ex: any) {
-        console.error(chalk.red(`Unexpected error, ${ex.message}`) ,ex);
+        return result;
+    } catch (ex: any) {
+        console.error(chalk.red(`Unexpected error, ${ex.message}`), ex);
+        process.exit(1);
     }
 };
