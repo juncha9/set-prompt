@@ -13,14 +13,20 @@ vi.mock('ora', () => ({
     })),
 }));
 vi.mock('@/_libs/config', () => ({
-    getConfig: vi.fn(),
-    setConfig: vi.fn(),
+    configManager: {
+        repo_path: null,
+        remote_url: null,
+        save: vi.fn(),
+        init: vi.fn(),
+        exists: vi.fn(),
+        reload: vi.fn(),
+    }
 }));
 
 const { loadCommand } = await import('@/commands/load-command');
 const { confirm } = await import('@inquirer/prompts');
 const { spawnSync } = await import('child_process');
-const { setConfig, getConfig } = await import('@/_libs/config');
+const { configManager } = await import('@/_libs/config');
 
 // process.exit spy — 실제 프로세스 종료 방지
 const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
@@ -33,8 +39,9 @@ describe('loadCommand — 로컬 경로', () => {
     beforeEach(() => {
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'set-prompt-test-'));
         vi.clearAllMocks();
-        vi.mocked(setConfig).mockReturnValue(true);
-        vi.mocked(getConfig).mockReturnValue({ repo_path: tmpDir });
+        vi.mocked(configManager.save).mockReturnValue(true);
+        configManager.repo_path = tmpDir;
+        configManager.remote_url = null;
         exitSpy.mockClear();
     });
 
@@ -48,10 +55,9 @@ describe('loadCommand — 로컬 경로', () => {
     });
 
     it('파일 경로(디렉토리 아님) → process.exit(1)', async () => {
-        const filePath = path.join(tmpDir, 'not-a-dir.txt');
-        fs.writeFileSync(filePath, 'content');
-
-        await loadCommand(filePath);
+        const file = path.join(tmpDir, 'not-a-dir.txt');
+        fs.writeFileSync(file, 'test');
+        await loadCommand(file);
         expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
@@ -62,7 +68,7 @@ describe('loadCommand — 로컬 경로', () => {
 
         expect(fs.existsSync(path.join(tmpDir, 'skills'))).toBe(false);
         expect(fs.existsSync(path.join(tmpDir, 'SET_PROMPT_GUIDE.md'))).toBe(false);
-        expect(setConfig).toHaveBeenCalledWith({ repo_path: tmpDir });
+        expect(configManager.save).toHaveBeenCalledWith({ repo_path: tmpDir });
     });
 
     it('사용자가 구조 생성 확인 → skills/commands/hooks 생성', async () => {
@@ -80,95 +86,90 @@ describe('loadCommand — 로컬 경로', () => {
 
         await loadCommand(tmpDir);
 
-        expect(fs.existsSync(path.join(tmpDir, 'SET_PROMPT_GUIDE.md'))).toBe(true);
-        const content = fs.readFileSync(path.join(tmpDir, 'SET_PROMPT_GUIDE.md'), 'utf-8');
-        expect(content.length).toBeGreaterThan(0);
+        const guidePath = path.join(tmpDir, 'SET_PROMPT_GUIDE.md');
+        expect(fs.existsSync(guidePath)).toBe(true);
+        const content = fs.readFileSync(guidePath, 'utf-8');
+        expect(content).toContain('# set-prompt');
     });
 
     it('이미 존재하는 디렉토리는 스킵 (기존 파일 유지)', async () => {
-        vi.mocked(confirm).mockResolvedValue(true);
-        fs.mkdirSync(path.join(tmpDir, 'skills'));
-        fs.writeFileSync(path.join(tmpDir, 'skills', 'existing.md'), '# existing');
+        const skillsDir = path.join(tmpDir, 'skills');
+        fs.mkdirSync(skillsDir);
+        fs.writeFileSync(path.join(skillsDir, 'test.md'), 'hello');
 
+        vi.mocked(confirm).mockResolvedValue(true);
         await loadCommand(tmpDir);
 
-        expect(fs.existsSync(path.join(tmpDir, 'skills', 'existing.md'))).toBe(true);
+        expect(fs.readFileSync(path.join(skillsDir, 'test.md'), 'utf-8')).toBe('hello');
     });
 
     it('SET_PROMPT_GUIDE.md 이미 존재 + 덮어쓰기 거부 → 기존 파일 유지', async () => {
         const guidePath = path.join(tmpDir, 'SET_PROMPT_GUIDE.md');
-        fs.writeFileSync(guidePath, '# 기존 가이드');
+        fs.writeFileSync(guidePath, 'old content');
 
-        // 첫 번째 confirm(구조 생성) → true, 두 번째 confirm(덮어쓰기) → false
-        vi.mocked(confirm)
-            .mockResolvedValueOnce(true)
-            .mockResolvedValueOnce(false);
+        vi.mocked(confirm).mockImplementation(async (opts: any) => {
+            if (opts.message.includes('overwrite')) return false;
+            return true;
+        });
 
         await loadCommand(tmpDir);
-
-        expect(fs.readFileSync(guidePath, 'utf-8')).toBe('# 기존 가이드');
+        expect(fs.readFileSync(guidePath, 'utf-8')).toBe('old content');
     });
 
     it('SET_PROMPT_GUIDE.md 이미 존재 + 덮어쓰기 확인 → .bak 생성 후 교체', async () => {
         const guidePath = path.join(tmpDir, 'SET_PROMPT_GUIDE.md');
-        fs.writeFileSync(guidePath, '# 기존 가이드');
+        fs.writeFileSync(guidePath, 'old content');
 
-        // 첫 번째 confirm(구조 생성) → true, 두 번째 confirm(덮어쓰기) → true
-        vi.mocked(confirm)
-            .mockResolvedValueOnce(true)
-            .mockResolvedValueOnce(true);
+        vi.mocked(confirm).mockResolvedValue(true);
 
         await loadCommand(tmpDir);
 
+        expect(fs.readFileSync(guidePath, 'utf-8')).not.toBe('old content');
         expect(fs.existsSync(guidePath + '.bak')).toBe(true);
-        expect(fs.readFileSync(guidePath + '.bak', 'utf-8')).toBe('# 기존 가이드');
-        expect(fs.readFileSync(guidePath, 'utf-8')).not.toBe('# 기존 가이드');
+        expect(fs.readFileSync(guidePath + '.bak', 'utf-8')).toBe('old content');
     });
 
     it('setConfig에 올바른 repo_path 전달', async () => {
-        vi.mocked(confirm).mockResolvedValue(false);
-
+        vi.mocked(confirm).mockResolvedValue(true);
         await loadCommand(tmpDir);
 
-        expect(setConfig).toHaveBeenCalledWith({ repo_path: tmpDir });
+        expect(configManager.save).toHaveBeenCalledWith({ repo_path: tmpDir });
     });
 });
 
 describe('loadCommand — git URL', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(setConfig).mockReturnValue(true);
-        vi.mocked(getConfig).mockReturnValue({ repo_path: '/some/path', remote_url: 'https://github.com/foo/bar.git' });
-        vi.mocked(confirm).mockResolvedValue(false); // setupRepo 스킵
+        vi.mocked(configManager.save).mockReturnValue(true);
+        // git clone의 spawnSync 결과를 성공으로 모킹
+        vi.mocked(spawnSync).mockReturnValue({ status: 0 } as any);
+        configManager.repo_path = '/some/path';
+        configManager.remote_url = 'https://github.com/foo/bar.git';
         exitSpy.mockClear();
     });
 
     it('https git URL → spawnSync clone 호출', async () => {
-        vi.mocked(spawnSync).mockReturnValue({ status: 0, stderr: null } as any);
-
         const gitUrl = 'https://github.com/foo/my-prompts.git';
         await loadCommand(gitUrl);
 
         expect(spawnSync).toHaveBeenCalledWith(
             'git',
             ['clone', gitUrl, expect.any(String)],
-            { stdio: 'pipe' },
+            { stdio: 'inherit' }
         );
     });
 
     it('git URL → setConfig에 remote_url 포함', async () => {
-        vi.mocked(spawnSync).mockReturnValue({ status: 0, stderr: null } as any);
-
         const gitUrl = 'https://github.com/foo/my-prompts.git';
         await loadCommand(gitUrl);
 
-        expect(setConfig).toHaveBeenCalledWith(
-            expect.objectContaining({ remote_url: gitUrl }),
+        expect(configManager.save).toHaveBeenCalledWith(
+            expect.objectContaining({ remote_url: gitUrl })
         );
     });
 
     it('clone 실패 → process.exit(1)', async () => {
-        vi.mocked(spawnSync).mockReturnValue({ status: 1, stderr: Buffer.from('error') } as any);
+        vi.mocked(spawnSync).mockReturnValue({ status: 1 } as any);
 
         const gitUrl = 'https://github.com/foo/my-prompts.git';
         await loadCommand(gitUrl);
@@ -176,14 +177,12 @@ describe('loadCommand — git URL', () => {
     });
 
     it('ssh git URL 인식 → clone 호출', async () => {
-        vi.mocked(spawnSync).mockReturnValue({ status: 0, stderr: null } as any);
-
         await loadCommand('git@github.com:foo/bar.git');
 
         expect(spawnSync).toHaveBeenCalledWith(
             'git',
             expect.arrayContaining(['clone']),
-            expect.any(Object),
+            expect.anything()
         );
     });
 });

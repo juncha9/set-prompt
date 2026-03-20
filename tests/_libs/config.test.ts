@@ -13,11 +13,12 @@ vi.mock('typia', () => ({
 }));
 
 // vi.mock 호이스팅 이후에 import
-const { getConfig, setConfig } = await import('@/_libs/config');
+const { getConfig, setConfig, configManager } = await import('@/_libs/config');
 
 describe('config', () => {
     beforeEach(() => {
         vol.reset();
+        configManager.reload(); // memfs에서 config 다시 로드
     });
 
     describe('getConfig', () => {

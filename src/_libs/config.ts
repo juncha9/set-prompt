@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { HOME_DIR, CONFIG_PATH, TAB } from '@/_defs';
 import { GlobalConfigSchema } from '@/_types';
 import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig } from '@/_types';
+import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
 export { HOME_DIR as GLOBAL_CONFIG_DIR, CONFIG_PATH as GLOBAL_CONFIG_PATH };
 
 class ConfigManager {
@@ -23,7 +24,9 @@ class ConfigManager {
     save(config: GlobalConfig): boolean {
         try {
             fs.mkdirSync(HOME_DIR, { recursive: true });
-            fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 4), 'utf-8');
+            // Remove undefined values before stringifying to TOML to avoid errors
+            const cleanConfig = JSON.parse(JSON.stringify(config));
+            fs.writeFileSync(CONFIG_PATH, stringifyToml(cleanConfig), 'utf-8');
 
             this._assign(config);
 
@@ -61,7 +64,7 @@ class ConfigManager {
         }
         try {
             const textData = fs.readFileSync(CONFIG_PATH, 'utf-8');
-            const jsonData = JSON.parse(textData);
+            const jsonData = parseToml(textData);
             const config = GlobalConfigSchema.parse(jsonData);
             this._assign(config);
         } catch (ex: any) {
