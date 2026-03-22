@@ -5,8 +5,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { confirm, checkbox } from '@inquirer/prompts';
 import { pathExists } from 'fs-extra';
-import { CLAUDE_CODE_DIR, REPO_DIRS, ALL_AGENTS, TOOLS } from '@/_defs';
-import type { AgentId } from '@/_defs';
+import { CLAUDE_CODE_DIR, PROMPT_DIR_NAMES, ALL_AGENTS, TOOLS } from '@/_defs';
 import { configManager } from '@/_libs/config';
 
 const spinner = ora();
@@ -20,47 +19,16 @@ const resolveRepoPath = (): string | null => {
     return configManager.repo_path;
 };
 
-const isApplied = (agent: TOOLS): boolean => {
-    if (agent === TOOLS.CLAUDE_CODE) { return configManager.claude_code?.enabled === true; }
-    if (agent === TOOLS.ROOCODE)     { return configManager.roocode?.enabled === true; }
-    if (agent === TOOLS.OPENCLAW)    { return configManager.openclaw?.enabled === true; }
-    return false;
-};
 
-const markApplied = (agent: AgentId): void => {
-    if (configManager.repo_path == null) { return; }
-
-    const base = {
-        repo_path:  configManager.repo_path,
-        remote_url: configManager.remote_url,
-        claude_code: configManager.claude_code,
-        roocode:    configManager.roocode,
-        openclaw:   configManager.openclaw,
-    };
-
-    if (agent === TOOLS.CLAUDE_CODE) {
-        configManager.save({ ...base, claude_code: { enabled: true } });
-    } else if (agent === TOOLS.ROOCODE) {
-        configManager.save({ ...base, roocode: { enabled: true, path: configManager.roocode?.path ?? null } });
-    } else if (agent === TOOLS.OPENCLAW) {
-        configManager.save({ ...base, openclaw: { enabled: true, path: configManager.openclaw?.path ?? null } });
-    }
-};
 
 const PLUGIN_NAME = 'set-prompt';
 
-const applyAgent = async (agent: AgentId): Promise<void> => {
-    if (agent === TOOLS.CLAUDE_CODE) { await useClaudeCode(); }
-    else if (agent === TOOLS.ROOCODE)  { await useRoocode(); }
-    else if (agent === TOOLS.OPENCLAW) { await useOpenclaw(); }
-    markApplied(agent);
-};
 
 export const useClaudeCode = async (): Promise<void> => {
     const repoPath = resolveRepoPath();
     if (repoPath == null) { return; }
 
-    const dirs = REPO_DIRS;
+    const dirs = PROMPT_DIR_NAMES;
 
     console.log(chalk.green(`\nSetting up Claude Code plugin...`));
     console.log(chalk.dim(CLAUDE_CODE_DIR));
@@ -146,16 +114,23 @@ export const useClaudeCode = async (): Promise<void> => {
     } else {
         console.log(chalk.dim(`\nRun manually: claude plugin install ${CLAUDE_CODE_DIR}`));
     }
+
+    configManager.claude_code = {};
+    configManager.save();
 };
 
 export const useRoocode = async (): Promise<void> => {
     if (resolveRepoPath() == null) { return; }
     console.log(chalk.yellow('RooCode integration is not yet implemented.'));
+    configManager.roocode = { path: configManager.roocode?.path ?? null };
+    configManager.save();
 };
 
 export const useOpenclaw = async (): Promise<void> => {
     if (resolveRepoPath() == null) { return; }
     console.log(chalk.yellow('OpenClaw integration is not yet implemented.'));
+    configManager.openclaw = { path: configManager.openclaw?.path ?? null };
+    configManager.save();
 };
 
 export const useCommand = async (tool?: string): Promise<void> => {
@@ -165,20 +140,30 @@ export const useCommand = async (tool?: string): Promise<void> => {
             console.log(chalk.red(`Unknown vendor: ${tool}`));
             process.exit(1);
         }
-        await applyAgent(tool as AgentId);
+        if (tool === TOOLS.CLAUDE_CODE)      { await useClaudeCode(); }
+        else if (tool === TOOLS.ROOCODE)     { await useRoocode(); }
+        else if (tool === TOOLS.OPENCLAW)    { await useOpenclaw(); }
         return;
     }
 
     const selected = await checkbox({
         message: 'Which AI agent do you want to integrate?',
-        choices: ALL_AGENTS.map(a => ({
-            name: isApplied(a.value) ? `${a.name} ${chalk.dim('(applied)')}` : a.name,
-            value: a.value,
-            checked: isApplied(a.value),
-        })),
+        choices: ALL_AGENTS.map(a => {
+            const applied =
+                a.value === TOOLS.CLAUDE_CODE ? configManager.isClaudeCodeEnabled() :
+                a.value === TOOLS.ROOCODE     ? configManager.isRoocodeEnabled() :
+                a.value === TOOLS.OPENCLAW    ? configManager.isOpenclawEnabled() : false;
+            return {
+                name: applied ? `${a.name} ${chalk.dim('(applied)')}` : a.name,
+                value: a.value,
+                checked: applied,
+            };
+        }),
     });
 
     for (const a of selected) {
-        await applyAgent(a);
+        if (a === TOOLS.CLAUDE_CODE)      { await useClaudeCode(); }
+        else if (a === TOOLS.ROOCODE)     { await useRoocode(); }
+        else if (a === TOOLS.OPENCLAW)    { await useOpenclaw(); }
     }
 };

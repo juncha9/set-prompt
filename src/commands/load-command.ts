@@ -4,74 +4,24 @@ import { spawnSync } from 'child_process';
 import chalk from 'chalk';
 import ora from 'ora';
 import { confirm } from '@inquirer/prompts';
-import { HOME_DIR, REPO_DIRS } from '@/_defs';
+import { HOME_DIR } from '@/_defs';
 import { configManager } from '@/_libs/config';
-import { SET_PROMPT_GUIDE } from '@/_libs/templates';
 import { isGitUrl } from '@/_libs';
+import { checkCommand } from './check-command';
 
-// Returns true if setup was performed, false if skipped
-const setupRepo = async (localPath: string): Promise<boolean> => {
-    const createdFiles: string[] = [];
 
-    const willSetup = await confirm({
-        message: `repo structure will be set up in the provided directory. Do you want to proceed?`,
-        default: true,
-    });
-
-    if (willSetup == false) {
-        console.log(chalk.yellow('Repo structure setup skipped.'));
-        return false;
-    }
-
-    try {
-        const guidePath = path.join(localPath, 'SET_PROMPT_GUIDE.md');
-        let writeGuide = true;
-
-        if (fs.existsSync(guidePath)) {
-            writeGuide = await confirm({
-                message: 'SET_PROMPT_GUIDE.md already exists. Overwrite it?',
-                default: false,
-            });
-            if (writeGuide) {
-                fs.renameSync(guidePath, guidePath + '.bak');
-                createdFiles.push('  SET_PROMPT_GUIDE.md.bak (renamed from SET_PROMPT_GUIDE.md)');
-            }
-        }
-
-        if (writeGuide) {
-            fs.writeFileSync(guidePath, SET_PROMPT_GUIDE, 'utf-8');
-            createdFiles.push('  SET_PROMPT_GUIDE.md');
-        }
-
-        for (const dir of REPO_DIRS) {
-            const dirPath = path.join(localPath, dir);
-            if (fs.existsSync(dirPath)) {
-                console.warn(chalk.yellow(`Directory already exists: ${dir}/ (skipping)`));
-                continue;
-            }
-            fs.mkdirSync(dirPath, { recursive: true });
-            createdFiles.push(`  ${dir}/`);
-        }
-
-        if (createdFiles.length > 0) {
-            console.log('\n' + chalk.green('Created:'));
-            createdFiles.forEach((line) => console.log(line));
-        }
-
-        return true;
-    } catch (ex: any) {
-        console.error(chalk.red(`Error setting up repo structure: ${ex.message}`));
-        throw ex;
-    }
-};
-
-// Returns true on success, false if cancelled
+/**
+ * 원격 Git URL을 받아 ~/.set-prompt/repo 경로에 클론하거나 pull로 최신화한 뒤 저장소를 등록한다.
+ * 기존 로컬 repo가 있으면 타임스탬프 백업 후 새로 클론한다.
+ * @returns 등록에 성공한 경우 true, 사용자가 취소한 경우 false
+ */
 const loadRemoteRepo = async (remoteUrl: string): Promise<boolean> => {
     const proceed = await confirm({
         message: `Clone and register remote repo "${remoteUrl}"?`,
         default: true,
     });
-    if (proceed === false) {
+    if (proceed == false) {
+        // 확인 단계에서 취소한 경우, 기존 repo 유지하면서 load 명령 자체는 성공으로 간주 (false 반환) - defaultCommand에서 처리
         console.log(chalk.yellow('Cancelled.'));
         return false;
     }
@@ -79,7 +29,8 @@ const loadRemoteRepo = async (remoteUrl: string): Promise<boolean> => {
     const localPath = path.join(HOME_DIR, 'repo');
     const spinner = ora();
 
-    if (fs.existsSync(localPath)) {
+    if (fs.existsSync(localPath) == true) {
+        // 로컬 repo가 이미 존재하는 경우 백업 후 진행
         console.warn(chalk.yellow(`Existing repo found at ${localPath}. Backing it up before proceeding.`));
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const backupPath = path.join(HOME_DIR, `repo.bak.${timestamp}`);
@@ -87,7 +38,8 @@ const loadRemoteRepo = async (remoteUrl: string): Promise<boolean> => {
         console.log(chalk.yellow(`Existing repo backed up to: ${backupPath}`));
     }
 
-    if (fs.existsSync(localPath)) {
+    if (fs.existsSync(localPath) == true) {
+        // 이미 클론된 repo가 존재하는 경우 최신 상태로 pull
         spinner.start('Pulling latest...');
         const result = spawnSync('git', ['pull'], { cwd: localPath, stdio: 'pipe' });
         if (result.status !== 0) {
@@ -96,6 +48,7 @@ const loadRemoteRepo = async (remoteUrl: string): Promise<boolean> => {
         }
         spinner.succeed('Pulled latest.');
     } else {
+        // repo가 존재하지 않는 경우 클론
         fs.mkdirSync(path.dirname(localPath), { recursive: true });
         spinner.start(`Cloning ${remoteUrl}...`);
         const result = spawnSync('git', ['clone', remoteUrl, localPath], { stdio: 'pipe' });
@@ -106,16 +59,24 @@ const loadRemoteRepo = async (remoteUrl: string): Promise<boolean> => {
         spinner.succeed('Cloned successfully.');
     }
 
-    await setupRepo(localPath);
+    await checkCommand(localPath, {
+        force: true,
+    });
 
-    if (configManager.save({ repo_path: localPath, remote_url: remoteUrl, claude_code: configManager.claude_code, roocode: configManager.roocode, openclaw: configManager.openclaw }) === false) {
+    configManager.repo_path  = localPath;
+    configManager.remote_url = remoteUrl;
+    if (configManager.save() === false) {
         console.error(chalk.red('Failed to save config. Please check the error message above and try again.'));
         return false;
     }
     return true;
 };
 
-// Returns true on success, false if cancelled
+/**
+ * 로컬 디렉터리 경로를 받아 유효성을 검사한 뒤 프롬프트 저장소로 등록한다.
+ * 경로가 존재하지 않거나 디렉터리가 아니면 오류로 종료한다.
+ * @returns 등록에 성공한 경우 true, 사용자가 취소한 경우 false
+ */
 const loadLocalRepo = async (target: string): Promise<boolean> => {
     const localPath = path.resolve(target);
 
@@ -138,15 +99,29 @@ const loadLocalRepo = async (target: string): Promise<boolean> => {
         return false;
     }
 
-    await setupRepo(localPath);
+    const result = await checkCommand(localPath, {
+        force: false,
+    });
+    if(result == false) {
+        
+    }
 
-    if (configManager.save({ repo_path: localPath, remote_url: null, claude_code: configManager.claude_code, roocode: configManager.roocode, openclaw: configManager.openclaw }) === false) {
+    configManager.repo_path  = localPath;
+    configManager.remote_url = null;
+    if (configManager.save() === false) {
         console.error(chalk.red('Failed to save config. Please check the error message above and try again.'));
         return false;
     }
     return true;
 };
 
+
+/**
+ * `set-prompt load` 명령어의 진입점.
+ * target이 Git URL이면 원격 저장소를, 로컬 경로면 로컬 저장소를 등록한다.
+ * target 미지정 시 현재 작업 디렉터리를 사용한다.
+ * @returns 등록에 성공한 경우 true, 사용자가 취소하거나 실패한 경우 false
+ */
 export const loadCommand = async (target?: string): Promise<boolean> => {
     try {
         const _target = target ?? process.cwd();

@@ -2,16 +2,14 @@ import path from 'node:path';
 import { z } from 'zod';
 
 export const ClaudeCodeConfigSchema = z.object({
-    enabled: z.boolean(),
+    
 });
 
 export const RoocodeConfigSchema = z.object({
-    enabled: z.boolean(),
     path: z.string().nullable(),
 });
 
 export const OpenclawConfigSchema = z.object({
-    enabled: z.boolean(),
     path: z.string().nullable(),
 });
 

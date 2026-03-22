@@ -9,6 +9,7 @@ import { loadCommand } from '@/commands/load-command';
 import { useCommand } from '@/commands/use-command';
 import { validateCommand } from '@/commands/validate-command';
 import { unloadCommand } from '@/commands/unload-command';
+import { checkCommand } from '@/commands/check-command';
 import { configManager } from '@/_libs/config';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,6 +56,27 @@ program
     .argument('[local-path]', 'Path to the prompt repo (overrides config)')
     .action(async (localPath?: string) => {
         await validateCommand(localPath);
+    });
+
+program
+    .command('check')
+    .description('Initialize repo structure (SET_PROMPT_GUIDE.md, skills/, commands/, ...)')
+    .argument('[path]', 'Path to the prompt repo (defaults to current directory)')
+    .option('-f, --force', 'Skip confirmation and overwrite existing files')
+    .action(async (localPath?: string, options?: { force?: boolean }) => {
+        if(localPath == null) {
+            console.error(chalk.red('Path is required for check command. Please provide a path to initialize the repo structure.'));
+            process.exit(1);
+            return;
+        }
+
+        if(fs.statSync(localPath).isDirectory() === false) {
+            console.error(chalk.red(`Please provide a valid directory path. [${localPath}]`));
+            process.exit(1);
+            return;
+        }
+
+        await checkCommand(localPath, options);
     });
 
 program
