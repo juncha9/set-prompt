@@ -4,10 +4,11 @@ Universal prompt manager for AI coding tools. Write prompts once, apply them eve
 
 ```
 my-prompts/ (git repo)
-    └── skills/, commands/
-            ↓ set-prompt use .
-            ↓ set-prompt claude-code
-    .claude/commands/,  .roomodes,  openclaw config ...
+    └── skills/, commands/, hooks/
+            ↓ set-prompt install .
+            ↓ set-prompt link claude-code
+    ~/.set-prompt/claude-code/   (Claude Code plugin)
+    roocode, openclaw ...        (not yet implemented)
 ```
 
 ## Installation
@@ -24,117 +25,106 @@ npx set-prompt <command>
 
 ```bash
 mkdir my-prompts && cd my-prompts && git init
-set-prompt init
+set-prompt scaffold .
 ```
 
 Creates:
 
 ```
 my-prompts/
-├── SEET_PROMPT_GUIDE.md   # This file (instructions for using the repo)
+├── SET_PROMPT_GUIDE.md
 ├── skills/
 │   └── <skill-name>/
-│       ├── SKILL.md         # platform-specific frontmatter + prompt content
-│       └── ...              # supporting files (scripts, configs, etc.)
-└── commands/
-    └── <command-name>/
-        ├── COMMAND.md       # platform-specific frontmatter + prompt content
-        └── ...              # supporting files
+│       └── SKILL.md
+├── commands/
+│   └── <command-name>/
+│       └── COMMAND.md
+└── hooks/
 ```
 
-### 2. Register the source
+### 2. Register the repository
 
 ```bash
-# local repo
-set-prompt use ./my-prompts
-
-# or remote
-set-prompt use https://github.com/you/my-prompts
+# remote git URL — cloned to ~/.set-prompt/repo/
+set-prompt install https://github.com/you/my-prompts
 ```
 
-Saves to `~/.set-prompt/config.yaml`. Remote repos are cloned to `~/.set-prompt/cache/`.
-
-### 3. Apply to AI tools
-
-Run in the project directory where you want prompts installed:
+### 3. Link to AI tools
 
 ```bash
-set-prompt claude-code   # → .claude/commands/, .claude/skills/
-set-prompt roocode       # → .roomodes
-set-prompt openclaw      # → openclaw format
+set-prompt link              # interactive selection
+set-prompt link claude-code  # Claude Code only
 ```
 
-## SKILL.md / COMMAND.md — frontmatter
-
-Each `SKILL.md` and `COMMAND.md` uses the target platform's own frontmatter format. `set-prompt` reads the frontmatter to determine how to install the file.
-
-See the [frontmatter reference](https://github.com/alkemic-studio/set-prompt#frontmatter-reference) in your prompt repo's README for full field details per platform.
+Claude Code integration creates a plugin at `~/.set-prompt/claude-code/` and registers it via the `claude` CLI.
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `init [path]` | Initialize a prompt repository |
-| `use <source>` | Register a local path or git URL as prompt source |
-| `claude-code` | Apply prompts to Claude Code in current directory |
-| `roocode` | Apply prompts to RooCode in current directory |
-| `openclaw` | Apply prompts to OpenClaw in current directory |
-| `validate <file>` | Validate a prompt YAML against schema |
+| Command | Description | Status |
+|---------|-------------|--------|
+| `scaffold [path]` | Verify and scaffold repo structure | ✅ |
+| `install <url>` | Clone remote git repo and register as prompt source | ✅ |
+| `link [agent]` | Link prompts to AI agents (interactive if omitted) | ✅ |
+| `link claude-code` | Link to Claude Code | ✅ |
+| `link roocode` | Link to RooCode | ⬜ |
+| `link openclaw` | Link to OpenClaw | ⬜ |
+| `status` | Show current repo and linked agents | ✅ |
+| `uninstall` | Remove all set-prompt data | ✅ |
 
 ## Stack
 
-- Node.js ESM, TypeScript (`moduleResolution: NodeNext`)
-- CLI: Commander.js, Inquirer, Chalk, Ora
+- Node.js ESM, TypeScript
+- CLI: Commander.js, Inquirer, Chalk
 - Build: `tsup` + cpx for static templates
-- Test: Vitest, `@vitest/coverage-v8`, memfs (in-memory FS mocking)
-- Dev: `npx tsx src/index.ts <command>`
+- Test: Vitest, memfs (in-memory FS mocking)
 
 ## Dev Commands
 
 ```bash
 npx tsx src/index.ts <command>   # Run without building
-npm run build                    # tsup + copy bin/templates
+npm run build                    # tsup + copy templates
 npm test                         # Run tests with vitest
-npm test -- --coverage           # Run tests with coverage report
+.\test-cli.ps1                   # Integration tests (PowerShell)
 ```
 
 ## Source Structure
 
 ```
 src/
-├── bin/set-prompt.js        # bin entry (shebang)
-├── index.ts                 # Commander setup, banner logic
+├── index.ts                      # Commander setup, banner
 ├── commands/
-│   ├── apply-command.ts     # logic for applying prompts to AI tools
-│   ├── setup-command.ts     # logic for `set-prompt use` (registering sources)
-│   └── validate-command.ts  # logic for `set-prompt validate`
-├── _defs/
-│   └── index.ts             # constants and definitions
-├── _types/
-│   └── index.ts             # shared TypeScript types
+│   ├── scaffold-command.ts       # set-prompt scaffold
+│   ├── install-command.ts        # set-prompt install
+│   ├── link-command.ts           # set-prompt link
+│   ├── status-command.ts         # set-prompt status
+│   └── uninstall-command.ts      # set-prompt uninstall
+├── _defs/index.ts                # constants
+├── _types/index.ts               # TypeScript types + Zod schemas
 ├── _libs/
-│   ├── config.ts            # GlobalConfig read/write (~/.set-prompt/config.toml)
-│   └── index.ts             # common utility functions
-└── templates/               # Copied to dist/templates/ at build time
-    └── SET_PROMPT_GUIDE.md  # template injected into new prompt repos
+│   ├── config.ts                 # ConfigManager (~/.set-prompt/config.json)
+│   └── index.ts                  # utility functions
+└── templates/
+    └── SET_PROMPT_GUIDE.md       # injected into new prompt repos
 ```
 
 ## Global Config
 
-Registered via `set-prompt use <source>`, stored at `~/.set-prompt/config.toml`.
+Stored at `~/.set-prompt/config.json`, managed via `ConfigManager`.
 
 ```
 ~/.set-prompt/
-├── config.toml         # global config (remote_url, repo_path)
-└── repo/               # remote repos cloned here
-    └── <repo-name>/     # e.g. my-prompts
-        ├── skills/
-        └── commands/
-```
-
-```typescript
-interface GlobalConfig {
-  remote_url: string;    // original URL (git URL or local path)
-  repo_path: string; // local path where repo is located (same as remote_url if local, or ~/.set-prompt/repo/<repo-name> if remote)
-}
+├── config.json          # repo_path, remote_url, linked agent state
+├── repo/                # remote repos cloned here
+│   └── <repo-name>/
+│       ├── skills/
+│       ├── commands/
+│       └── hooks/
+└── claude-code/         # Claude Code plugin output
+    ├── .claude-plugin/
+    │   └── marketplace.json
+    └── plugins/set-prompt/
+        ├── .claude-plugin/plugin.json
+        ├── skills/      → symlink to repo/skills/
+        ├── commands/    → symlink to repo/commands/
+        └── hooks/       → symlink to repo/hooks/
 ```

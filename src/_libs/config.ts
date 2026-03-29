@@ -55,7 +55,7 @@ class ConfigManager {
             }, null, 4);
             fs.writeFileSync(CONFIG_PATH, configStr, 'utf-8');
 
-            console.log(chalk.green(`\nConfig saved at ${chalk.dim(CONFIG_PATH)}\n${configStr}`));
+            console.log(chalk.green(`Config saved`) + chalk.dim(` → ${CONFIG_PATH}`));
             return true;
         } catch (ex: any) {
             console.error(chalk.red(`Failed to save config at '${CONFIG_PATH}'`), ex.message);
@@ -79,7 +79,7 @@ class ConfigManager {
         return this._claude_code != null;
     }
 
-    isRoocodeEnabled(): boolean {   
+    isRooCodeEnabled(): boolean {   
         return this._roocode != null;
     }
 

@@ -1,5 +1,5 @@
-# set-prompt CLI 통합 테스트
-# 실행: .\test-cli.ps1
+# set-prompt CLI integration test
+# Run: .\test-cli.ps1
 
 $CLI     = "npx tsx src/index.ts"
 $Repo    = "$env:TEMP\sp-test-repo-$(Get-Random)"
@@ -11,115 +11,107 @@ function ng($label) { Write-Host "  [FAIL] $label" -ForegroundColor Red;   $scri
 
 function Run($args_str, $stdin = $null) {
     if ($stdin) {
-        $result = ($stdin | Invoke-Expression "$CLI $args_str" 2>&1) | Out-String
+        $lines = $stdin -split "`n"
+        $echos = ($lines | ForEach-Object { "echo $_" }) -join " & "
+        $result = (cmd /c "($echos) | $CLI $args_str" 2>&1) | Out-String
     } else {
         $result = (Invoke-Expression "$CLI $args_str" 2>&1) | Out-String
     }
     return @{ output = $result; exit = $LASTEXITCODE }
 }
 
-Write-Host "`n===== set-prompt CLI 통합 테스트 =====" -ForegroundColor Cyan
+Write-Host "`n===== set-prompt CLI integration test =====" -ForegroundColor Cyan
 New-Item -ItemType Directory -Path $Repo | Out-Null
-Write-Host "임시 repo: $Repo`n"
+Write-Host "Temp repo: $Repo`n"
 
 
-# ─── check ────────────────────────────────────────────────────────────────────
-Write-Host "[ check ]" -ForegroundColor Yellow
+# ─── scaffold ────────────────────────────────────────────────────────────────────
+Write-Host "[ scaffold ]" -ForegroundColor Yellow
 
-$r = Run "check `"$Repo`" --force"
+$r = Run "scaffold `"$Repo`" --force"
 if ((Test-Path "$Repo\SET_PROMPT_GUIDE.md") -and (Test-Path "$Repo\skills") -and (Test-Path "$Repo\commands")) {
-    ok "check --force: repo 구조 생성"
+    ok "scaffold --force: repo structure created"
 } else {
-    ng "check --force: repo 구조 생성 실패`n$($r.output)"
+    ng "scaffold --force: repo structure creation failed`n$($r.output)"
 }
 
 $before = (Get-Item "$Repo\SET_PROMPT_GUIDE.md").LastWriteTime
-$r = Run "check `"$Repo`" --force"
+$r = Run "scaffold `"$Repo`" --force"
 $after = (Get-Item "$Repo\SET_PROMPT_GUIDE.md").LastWriteTime
 if ($after -gt $before) {
-    ok "check --force: SET_PROMPT_GUIDE.md 덮어쓰기"
+    ok "scaffold --force: SET_PROMPT_GUIDE.md overwritten"
 } else {
-    ng "check --force: SET_PROMPT_GUIDE.md 덮어쓰기 실패"
+    ng "scaffold --force: SET_PROMPT_GUIDE.md overwrite failed"
 }
 
-$r = Run "check"
+$r = Run "scaffold"
 if ($r.output -match "required|error|Path" -or $r.exit -ne 0) {
-    ok "check (path 미지정): 오류 반환"
+    ok "scaffold (no path): error returned"
 } else {
-    ng "check (path 미지정): 오류 반환 실패`n$($r.output)"
+    ng "scaffold (no path): error not returned`n$($r.output)"
 }
 
 
-# ─── load ─────────────────────────────────────────────────────────────────────
-Write-Host "`n[ load ]" -ForegroundColor Yellow
+# ─── install ──────────────────────────────────────────────────────────────────
+Write-Host "`n[ install ]" -ForegroundColor Yellow
 
-$r = Run "load `"$Repo`"" "y"
+$r = Run "install `"$Repo`"" "y"
 if ($r.exit -eq 0) {
-    ok "load <local-path>: 등록 성공"
+    ok "install <local-path>: registered successfully"
 } else {
-    ng "load <local-path>: 등록 실패`n$($r.output)"
+    ng "install <local-path>: registration failed`n$($r.output)"
 }
 
-$r = Run "load `"$Repo\nonexistent`""
+$r = Run "install `"$Repo\nonexistent`""
 if ($r.output -match "does not exist|error|invalid" -or $r.exit -ne 0) {
-    ok "load <없는 경로>: 오류 반환"
+    ok "install <non-existent path>: error returned"
 } else {
-    ng "load <없는 경로>: 오류 반환 실패`n$($r.output)"
+    ng "install <non-existent path>: error not returned`n$($r.output)"
 }
 
-
-# ─── validate ─────────────────────────────────────────────────────────────────
-Write-Host "`n[ validate ]" -ForegroundColor Yellow
-
-$r = Run "validate `"$Repo`""
-if ($r.output -match "valid") {
-    ok "validate <유효한 repo>: valid 결과 출력"
-} else {
-    ng "validate <유효한 repo>: valid 결과 없음`n$($r.output)"
-}
 
 $empty = "$env:TEMP\sp-test-empty-$(Get-Random)"
 New-Item -ItemType Directory -Path $empty | Out-Null
-$r = Run "validate `"$empty`""
-if ($r.output -match "invalid|missing") {
-    ok "validate <빈 디렉터리>: invalid 결과 출력"
+$r = Run "scaffold `"$empty`""
+if ($r.output -match "missing|Created|valid") {
+    ok "scaffold <empty dir>: structure reported"
 } else {
-    ng "validate <빈 디렉터리>: invalid 결과 없음`n$($r.output)"
+    ng "scaffold <empty dir>: unexpected output`n$($r.output)"
 }
 Remove-Item -Recurse -Force $empty
 
 
-# ─── use ──────────────────────────────────────────────────────────────────────
-Write-Host "`n[ use ]" -ForegroundColor Yellow
+# ─── link ─────────────────────────────────────────────────────────────────────
+Write-Host "`n[ link ]" -ForegroundColor Yellow
 
-$r = Run "use claude-code" "n"
+$r = Run "link claude-code" "n"
 if ($r.exit -eq 0) {
-    ok "use claude-code: 실행 완료"
+    ok "link claude-code: completed"
 } else {
-    ng "use claude-code: 실패`n$($r.output)"
+    ng "link claude-code: failed`n$($r.output)"
 }
 
-$r = Run "use unknown-agent"
+$r = Run "link unknown-agent"
 if ($r.output -match "Unknown|unknown|error" -or $r.exit -ne 0) {
-    ok "use <알 수 없는 agent>: 오류 반환"
+    ok "link <unknown agent>: error returned"
 } else {
-    ng "use <알 수 없는 agent>: 오류 반환 실패`n$($r.output)"
+    ng "link <unknown agent>: error not returned`n$($r.output)"
 }
 
 
-# ─── unload ───────────────────────────────────────────────────────────────────
-Write-Host "`n[ unload ]" -ForegroundColor Yellow
+# ─── uninstall ────────────────────────────────────────────────────────────────
+Write-Host "`n[ uninstall ]" -ForegroundColor Yellow
 
-$r = Run "unload" "y"
+$r = Run "uninstall" "y"
 if ($r.exit -eq 0) {
-    ok "unload: 실행 완료"
+    ok "uninstall: completed"
 } else {
-    ng "unload: 실패`n$($r.output)"
+    ng "uninstall: failed`n$($r.output)"
 }
 
 
-# ─── 정리 & 결과 ──────────────────────────────────────────────────────────────
+# ─── cleanup & result ─────────────────────────────────────────────────────────
 Remove-Item -Recurse -Force $Repo -ErrorAction SilentlyContinue
 
-Write-Host "`n===== 결과: PASS $Pass / FAIL $Fail =====" -ForegroundColor $(if ($Fail -eq 0) { "Green" } else { "Red" })
+Write-Host "`n===== Result: PASS $Pass / FAIL $Fail =====" -ForegroundColor $(if ($Fail -eq 0) { "Green" } else { "Red" })
 if ($Fail -gt 0) { exit 1 }
