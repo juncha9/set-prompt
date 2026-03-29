@@ -7,7 +7,6 @@ vi.mock('fs', async () => {
     return { default: fs, ...fs };
 });
 
-// vi.mock 호이스팅 이후에 import
 const { configManager } = await import('@/_libs/config');
 
 const VALID_CONFIG = {
@@ -21,11 +20,11 @@ const VALID_CONFIG = {
 describe('configManager', () => {
     beforeEach(() => {
         vol.reset();
-        configManager.repo_path  = null;
-        configManager.remote_url = null;
+        configManager.repo_path   = null;
+        configManager.remote_url  = null;
         configManager.claude_code = null;
-        configManager.roocode    = null;
-        configManager.openclaw   = null;
+        configManager.roocode     = null;
+        configManager.openclaw    = null;
     });
 
     describe('reload', () => {
@@ -83,28 +82,40 @@ describe('configManager', () => {
         });
 
         it('저장 후 reload로 동일 값 복원', () => {
-            configManager.repo_path  = '/round/trip';
-            configManager.remote_url = 'https://example.com';
-            configManager.claude_code = { enabled: true };
+            configManager.repo_path   = '/round/trip';
+            configManager.remote_url  = 'https://example.com';
+            configManager.claude_code = { path: '/some/claude-code/dir' };
             configManager.save();
 
-            configManager.repo_path  = null;
-            configManager.remote_url = null;
+            configManager.repo_path   = null;
+            configManager.remote_url  = null;
             configManager.claude_code = null;
             configManager.reload();
 
             expect(configManager.repo_path).toBe('/round/trip');
             expect(configManager.remote_url).toBe('https://example.com');
-            expect(configManager.claude_code).toEqual({ enabled: true });
+            expect(configManager.claude_code).toEqual({ path: '/some/claude-code/dir' });
         });
 
-        it('claude_code enabled 저장', () => {
+        it('claude_code path 저장', () => {
             configManager.repo_path   = '/my/repo';
-            configManager.claude_code = { enabled: true };
+            configManager.claude_code = { path: '/my/claude-code' };
             configManager.save();
 
             const content = vol.readFileSync(CONFIG_PATH, 'utf-8') as string;
-            expect(JSON.parse(content).claude_code).toEqual({ enabled: true });
+            expect(JSON.parse(content).claude_code).toEqual({ path: '/my/claude-code' });
+        });
+
+        it('roocode path, backup_path 저장', () => {
+            configManager.repo_path = '/my/repo';
+            configManager.roocode   = { path: '/home/.roo', backup_path: '/home/.roo/.set-prompt-backup' };
+            configManager.save();
+
+            const content = vol.readFileSync(CONFIG_PATH, 'utf-8') as string;
+            expect(JSON.parse(content).roocode).toEqual({
+                path: '/home/.roo',
+                backup_path: '/home/.roo/.set-prompt-backup',
+            });
         });
     });
 
@@ -126,6 +137,15 @@ describe('configManager', () => {
         it('repo_path 설정 후 isRepoSet() true', () => {
             configManager.repo_path = '/my/repo';
             expect(configManager.isRepoSet()).toBe(true);
+        });
+
+        it('claude_code null이면 isClaudeCodeEnabled() false', () => {
+            expect(configManager.isClaudeCodeEnabled()).toBe(false);
+        });
+
+        it('claude_code 설정 후 isClaudeCodeEnabled() true', () => {
+            configManager.claude_code = { path: '/some/path' };
+            expect(configManager.isClaudeCodeEnabled()).toBe(true);
         });
     });
 });

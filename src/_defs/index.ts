@@ -14,15 +14,19 @@ export const REPO_CONFIG_FILENAME = 'set-prompt.toml';
 export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks'] as const;
 
 export enum TOOLS {
-    CLAUDE_CODE = 'claude-code',
-    ROOCODE = 'roocode',
-    OPENCLAW = 'openclaw',
+    CLAUDECODE   = 'claudecode',
+    ROOCODE      = 'roocode',
+    OPENCLAW     = 'openclaw',
+    CODEX        = 'codex',
+    ANTIGRAVITY  = 'antigravity',
 }
 
 export type AgentId = TOOLS;
 
 export const ALL_AGENTS = [
-    { name: 'Claude Code', value: TOOLS.CLAUDE_CODE },
-    { name: 'RooCode',     value: TOOLS.ROOCODE },
-    { name: 'OpenClaw',    value: TOOLS.OPENCLAW },
+    { name: 'Claude Code',  value: TOOLS.CLAUDECODE },
+    { name: 'RooCode',      value: TOOLS.ROOCODE },
+    { name: 'OpenClaw',     value: TOOLS.OPENCLAW },
+    { name: 'Codex',        value: TOOLS.CODEX },
+    { name: 'Antigravity',  value: TOOLS.ANTIGRAVITY },
 ] as const;

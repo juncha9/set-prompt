@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.0.2",
+    "version": "0.1.0",
     "description": "Universal Prompt Manager for AI Coding Tools",
     "main": "dist/index.js",
     "bin": {
@@ -21,7 +21,7 @@
         "claude-code",
         "roo-code"
     ],
-    "author": "Alkemic Studio",
+    "author": "juncha9 (https://github.com/juncha9)",
     "license": "MIT",
     "dependencies": {
         "@inquirer/prompts": "^8.3.0",

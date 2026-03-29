@@ -55,7 +55,7 @@ program
 
 program
     .command('link')
-    .description(`🔗 Symlink your prompt repo into an ${chalk.cyan('AI agent')} plugin dir ${chalk.dim('(claude-code | roocode | openclaw)')}`)
+    .description(`🔗 Symlink your prompt repo into an ${chalk.cyan('AI agent')} plugin dir ${chalk.dim('(claudecode | roocode | openclaw | codex | antigravity)')}`)
     .argument('[agent]', `target agent ${chalk.dim('(omit for interactive selection)')}`)
     .action(async (agent?: string) => {
         await linkCommand(agent);

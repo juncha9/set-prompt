@@ -22,7 +22,7 @@ export const statusCommand = (): void => {
         let linked = false;
         let agentPath: string | null | undefined = null;
 
-        if (agent.value === TOOLS.CLAUDE_CODE) {
+        if (agent.value === TOOLS.CLAUDECODE) {
             linked = configManager.isClaudeCodeEnabled();
             agentPath = configManager.claude_code?.path;
         } else if (agent.value === TOOLS.ROOCODE) {
@@ -31,6 +31,12 @@ export const statusCommand = (): void => {
         } else if (agent.value === TOOLS.OPENCLAW) {
             linked = configManager.isOpenclawEnabled();
             agentPath = configManager.openclaw?.path;
+        } else if (agent.value === TOOLS.CODEX) {
+            linked = configManager.isCodexEnabled();
+            agentPath = configManager.codex?.path;
+        } else if (agent.value === TOOLS.ANTIGRAVITY) {
+            linked = configManager.isAntigravityEnabled();
+            agentPath = configManager.antigravity?.path;
         }
 
         const label = linked ? chalk.green('linked') : chalk.dim('not linked');

@@ -260,8 +260,16 @@ export const linkRooCode = async (): Promise<void> => {
 export const linkOpenclaw = async (): Promise<void> => {
     if (resolveRepoPath() == null) { return; }
     console.log(chalk.yellow('OpenClaw integration is not yet implemented.'));
-    configManager.openclaw = { path: configManager.openclaw?.path ?? null };
-    configManager.save();
+};
+
+export const linkCodex = async (): Promise<void> => {
+    if (resolveRepoPath() == null) { return; }
+    console.log(chalk.yellow('Codex integration is not yet implemented.'));
+};
+
+export const linkAntigravity = async (): Promise<void> => {
+    if (resolveRepoPath() == null) { return; }
+    console.log(chalk.yellow('Antigravity integration is not yet implemented.'));
 };
 
 export const linkCommand = async (tool?: string): Promise<void> => {
@@ -271,9 +279,11 @@ export const linkCommand = async (tool?: string): Promise<void> => {
             console.log(chalk.red(`Unknown vendor: ${tool}`));
             process.exit(1);
         }
-        if (tool === TOOLS.CLAUDE_CODE)      { await linkClaudeCode(); }
-        else if (tool === TOOLS.ROOCODE)     { await linkRooCode(); }
-        else if (tool === TOOLS.OPENCLAW)    { await linkOpenclaw(); }
+        if (tool === TOOLS.CLAUDECODE)        { await linkClaudeCode(); }
+        else if (tool === TOOLS.ROOCODE)       { await linkRooCode(); }
+        else if (tool === TOOLS.OPENCLAW)      { await linkOpenclaw(); }
+        else if (tool === TOOLS.CODEX)         { await linkCodex(); }
+        else if (tool === TOOLS.ANTIGRAVITY)   { await linkAntigravity(); }
         return;
     }
 
@@ -281,9 +291,11 @@ export const linkCommand = async (tool?: string): Promise<void> => {
         message: 'Which AI agent do you want to integrate?',
         choices: ALL_AGENTS.map(a => {
             const applied =
-                a.value === TOOLS.CLAUDE_CODE ? configManager.isClaudeCodeEnabled() :
-                a.value === TOOLS.ROOCODE     ? configManager.isRooCodeEnabled() :
-                a.value === TOOLS.OPENCLAW    ? configManager.isOpenclawEnabled() : false;
+                a.value === TOOLS.CLAUDECODE  ? configManager.isClaudeCodeEnabled() :
+                a.value === TOOLS.ROOCODE      ? configManager.isRooCodeEnabled() :
+                a.value === TOOLS.OPENCLAW     ? configManager.isOpenclawEnabled() :
+                a.value === TOOLS.CODEX        ? configManager.isCodexEnabled() :
+                a.value === TOOLS.ANTIGRAVITY  ? configManager.isAntigravityEnabled() : false;
             return {
                 name: applied ? `${a.name} ${chalk.dim('(applied)')}` : a.name,
                 value: a.value,
@@ -293,8 +305,10 @@ export const linkCommand = async (tool?: string): Promise<void> => {
     });
 
     for (const a of selected) {
-        if (a === TOOLS.CLAUDE_CODE)      { await linkClaudeCode(); }
-        else if (a === TOOLS.ROOCODE)     { await linkRooCode(); }
-        else if (a === TOOLS.OPENCLAW)    { await linkOpenclaw(); }
+        if (a === TOOLS.CLAUDECODE)        { await linkClaudeCode(); }
+        else if (a === TOOLS.ROOCODE)       { await linkRooCode(); }
+        else if (a === TOOLS.OPENCLAW)      { await linkOpenclaw(); }
+        else if (a === TOOLS.CODEX)         { await linkCodex(); }
+        else if (a === TOOLS.ANTIGRAVITY)   { await linkAntigravity(); }
     }
 };

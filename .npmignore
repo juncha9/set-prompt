@@ -12,3 +12,5 @@ tsup*.config.ts
 
 .env*
 !.env.example
+
+.CLAUDE.md

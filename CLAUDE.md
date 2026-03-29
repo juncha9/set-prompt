@@ -14,21 +14,20 @@ Managing the same prompts separately for each tool leads to duplication and inco
    - Creates `skills/`, `commands/`, `hooks/` folder structure
    - Each skill/command is managed as a single `SKILL.md` / `COMMAND.md` file
 
-2. **Register a prompt repository** (`set-prompt install <path|url>`)
-   - Specify a local path or remote git URL
-   - Remote repositories are cloned to `~/.set-prompt/repo/`
+2. **Register a prompt repository** (`set-prompt install <git-url>`)
+   - Git URL only — cloned to `~/.set-prompt/repo/`
 
 3. **Link prompts to AI tools** (`set-prompt link [agent]`)
    - Reads `SKILL.md` / `COMMAND.md` from the registered repository
-   - Claude Code → `~/.set-prompt/claude-code/` (Claude plugin format)
-   - RooCode → (not yet implemented)
+   - Claude Code → `~/.set-prompt/claudecode/` (Claude plugin format)
+   - RooCode → `~/.roo/` (symlinks, with backup)
    - OpenClaw → (not yet implemented)
 
 ```
 my-prompts/ (git repo)
-  skills/my-skill/SKILL.md      →   set-prompt link claude-code   →   ~/.set-prompt/claude-code/
-  commands/my-cmd/COMMAND.md    →   set-prompt link roocode        →   (not yet implemented)
-                                →   set-prompt link openclaw       →   (not yet implemented)
+  skills/, commands/, hooks/   →   set-prompt link claudecode   →   ~/.set-prompt/claudecode/
+                               →   set-prompt link roocode       →   ~/.roo/
+                               →   set-prompt link openclaw      →   (not yet implemented)
 ```
 
 For project structure, stack, and design details, refer to [README.md](./README.md).
@@ -38,7 +37,7 @@ For project structure, stack, and design details, refer to [README.md](./README.
 ```bash
 npx tsx src/index.ts <command>   # Run without building
 npm run build                    # tsc + copy_templates
-.\test-cli.ps1                   # Integration tests (PowerShell)
+.\tests\test-cli.ps1             # Integration tests (PowerShell)
 ```
 
 ## Commands
@@ -46,11 +45,13 @@ npm run build                    # tsc + copy_templates
 | Command | Description | Status |
 |---------|-------------|--------|
 | `scaffold [path]` | Verify and scaffold repo structure | ✅ |
-| `install <source>` | Register prompt repo (local path or remote git URL) | ✅ |
+| `install <url>` | Clone remote git repo and register as prompt source | ✅ |
 | `link [agent]` | Link prompts to AI agents (interactive if omitted) | ✅ |
-| `link claude-code` | Link to Claude Code | ✅ |
-| `link roocode` | Link to RooCode | ⬜ |
-| `link openclaw` | Link to OpenClaw | ⬜ |
+| `link claudecode` | Link to Claude Code | ✅ |
+| `link roocode` | Link to RooCode | ✅ |
+| `link openclaw` | Link to OpenClaw | 🔜 planned |
+| `link codex` | Link to Codex | 🔜 planned |
+| `link antigravity` | Link to Antigravity | 🔜 planned |
 | `status` | Show current repo and linked agents | ✅ |
 | `uninstall` | Remove all set-prompt data | ✅ |
 
@@ -63,15 +64,19 @@ npm run build                    # tsc + copy_templates
 - **Config save**: single line — `Config saved → <path>` (no JSON dump)
 - **Errors**: `chalk.red()` for message text; `❌` prefix for result-level failures
 
-## Claude Code Integration
+## Agent Integration Notes
 
-`link claude-code` does the following:
-1. Creates plugin structure at `~/.set-prompt/claude-code/` with symlinks into the repo
-2. Runs `claude plugin marketplace add <dir>` to register the marketplace via CLI
-3. Adds `enabledPlugins` entry directly to `~/.claude/settings.json` (boolean flag only — safe)
-4. Saves `claude_code.path` to set-prompt config
+### Claude Code (`link claudecode`)
+1. Creates plugin structure at `~/.set-prompt/claudecode/` with symlinks into the repo
+2. Modifies `~/.claude/settings.json` — adds `extraKnownMarketplaces` + `enabledPlugins` (merges, never replaces)
+3. Backs up `settings.json` before writing; rolls back on failure
 
-`claude plugin install` is NOT used — it causes EPERM on Windows due to symlink creation in its cache.
+`claude plugin install` is NOT used — causes EPERM on Windows (symlink creation in Claude's cache).
+
+### RooCode (`link roocode`)
+1. Backs up existing `skills/`, `commands/`, `hooks/` in `~/.roo/` to `~/.roo/.set-prompt-backup/`
+2. Symlinks repo dirs into `~/.roo/`
+3. `uninstall` removes symlinks and restores backup
 
 ## Notes
 

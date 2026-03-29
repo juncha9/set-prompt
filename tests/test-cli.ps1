@@ -46,29 +46,10 @@ if ($after -gt $before) {
 
 $r = Run "scaffold"
 if ($r.output -match "required|error|Path" -or $r.exit -ne 0) {
-    ok "scaffold (no path): error returned"
+    ok "scaffold (no path, no config): error returned"
 } else {
-    ng "scaffold (no path): error not returned`n$($r.output)"
+    ng "scaffold (no path, no config): error not returned`n$($r.output)"
 }
-
-
-# ─── install ──────────────────────────────────────────────────────────────────
-Write-Host "`n[ install ]" -ForegroundColor Yellow
-
-$r = Run "install `"$Repo`"" "y"
-if ($r.exit -eq 0) {
-    ok "install <local-path>: registered successfully"
-} else {
-    ng "install <local-path>: registration failed`n$($r.output)"
-}
-
-$r = Run "install `"$Repo\nonexistent`""
-if ($r.output -match "does not exist|error|invalid" -or $r.exit -ne 0) {
-    ok "install <non-existent path>: error returned"
-} else {
-    ng "install <non-existent path>: error not returned`n$($r.output)"
-}
-
 
 $empty = "$env:TEMP\sp-test-empty-$(Get-Random)"
 New-Item -ItemType Directory -Path $empty | Out-Null
@@ -81,14 +62,50 @@ if ($r.output -match "missing|Created|valid") {
 Remove-Item -Recurse -Force $empty
 
 
-# ─── link ─────────────────────────────────────────────────────────────────────
+# ─── status (before install) ─────────────────────────────────────────────────
+Write-Host "`n[ status ]" -ForegroundColor Yellow
+
+$r = Run "status"
+if ($r.output -match "No repo installed") {
+    ok "status (before install): shows not installed"
+} else {
+    ng "status (before install): unexpected output`n$($r.output)"
+}
+
+
+# ─── install ──────────────────────────────────────────────────────────────────
+Write-Host "`n[ install ]" -ForegroundColor Yellow
+
+$r = Run "install `"$Repo`""
+if ($r.output -match "git URL|Only remote" -or $r.exit -ne 0) {
+    ok "install <local-path>: rejected (git URL only)"
+} else {
+    ng "install <local-path>: should have been rejected`n$($r.output)"
+}
+
+$r = Run "install `"not-a-url`""
+if ($r.output -match "git URL|Only remote" -or $r.exit -ne 0) {
+    ok "install <invalid url>: error returned"
+} else {
+    ng "install <invalid url>: error not returned`n$($r.output)"
+}
+
+
+# ─── link (no repo installed) ─────────────────────────────────────────────────
 Write-Host "`n[ link ]" -ForegroundColor Yellow
 
-$r = Run "link claude-code" "n"
-if ($r.exit -eq 0) {
-    ok "link claude-code: completed"
+$r = Run "link claude-code"
+if ($r.output -match "No repo|install") {
+    ok "link claude-code (no repo): install prompt shown"
 } else {
-    ng "link claude-code: failed`n$($r.output)"
+    ng "link claude-code (no repo): unexpected output`n$($r.output)"
+}
+
+$r = Run "link roocode"
+if ($r.output -match "No repo|install") {
+    ok "link roocode (no repo): install prompt shown"
+} else {
+    ng "link roocode (no repo): unexpected output`n$($r.output)"
 }
 
 $r = Run "link unknown-agent"
@@ -96,17 +113,6 @@ if ($r.output -match "Unknown|unknown|error" -or $r.exit -ne 0) {
     ok "link <unknown agent>: error returned"
 } else {
     ng "link <unknown agent>: error not returned`n$($r.output)"
-}
-
-
-# ─── uninstall ────────────────────────────────────────────────────────────────
-Write-Host "`n[ uninstall ]" -ForegroundColor Yellow
-
-$r = Run "uninstall" "y"
-if ($r.exit -eq 0) {
-    ok "uninstall: completed"
-} else {
-    ng "uninstall: failed`n$($r.output)"
 }
 
 

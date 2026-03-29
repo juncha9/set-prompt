@@ -2,27 +2,33 @@ import fs from 'fs';
 import chalk from 'chalk';
 import { HOME_DIR, CONFIG_PATH, TAB } from '@/_defs';
 import { GlobalConfigSchema } from '@/_types';
-import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig } from '@/_types';
+import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig, CodexConfig, AntigravityConfig } from '@/_types';
 export { HOME_DIR as GLOBAL_CONFIG_DIR, CONFIG_PATH as GLOBAL_CONFIG_PATH };
 
 class ConfigManager {
-    private _repo_path:  string | null = null;
-    private _remote_url: string | null = null;
-    private _claude_code: ClaudeCodeConfig | null = null;
-    private _roocode:    RoocodeConfig | null = null;
-    private _openclaw:   OpenclawConfig | null = null;
+    private _repo_path:    string | null = null;
+    private _remote_url:   string | null = null;
+    private _claude_code:  ClaudeCodeConfig | null = null;
+    private _roocode:      RoocodeConfig | null = null;
+    private _openclaw:     OpenclawConfig | null = null;
+    private _codex:        CodexConfig | null = null;
+    private _antigravity:  AntigravityConfig | null = null;
 
-    get repo_path()  { return this._repo_path; }
-    get remote_url() { return this._remote_url; }
+    get repo_path()   { return this._repo_path; }
+    get remote_url()  { return this._remote_url; }
     get claude_code() { return this._claude_code; }
-    get roocode()    { return this._roocode; }
-    get openclaw()   { return this._openclaw; }
+    get roocode()     { return this._roocode; }
+    get openclaw()    { return this._openclaw; }
+    get codex()       { return this._codex; }
+    get antigravity() { return this._antigravity; }
 
-    set repo_path(v: string | null)            { this._repo_path  = v; }
-    set remote_url(v: string | null)           { this._remote_url = v; }
-    set claude_code(v: ClaudeCodeConfig | null) { this._claude_code = v; }
-    set roocode(v: RoocodeConfig | null)       { this._roocode    = v; }
-    set openclaw(v: OpenclawConfig | null)     { this._openclaw   = v; }
+    set repo_path(v: string | null)              { this._repo_path    = v; }
+    set remote_url(v: string | null)             { this._remote_url   = v; }
+    set claude_code(v: ClaudeCodeConfig | null)  { this._claude_code  = v; }
+    set roocode(v: RoocodeConfig | null)         { this._roocode      = v; }
+    set openclaw(v: OpenclawConfig | null)       { this._openclaw     = v; }
+    set codex(v: CodexConfig | null)             { this._codex        = v; }
+    set antigravity(v: AntigravityConfig | null) { this._antigravity  = v; }
 
     init(): void {
         this._loadFromDisk();
@@ -38,13 +44,6 @@ class ConfigManager {
             return false;
         }
         try {
-            const config: GlobalConfig = {
-                repo_path:   this._repo_path,
-                remote_url:  this._remote_url,
-                claude_code: this._claude_code,
-                roocode:     this._roocode,
-                openclaw:    this._openclaw,
-            };
             fs.mkdirSync(HOME_DIR, { recursive: true });
             const configStr = JSON.stringify({
                 repo_path:   this._repo_path,
@@ -52,6 +51,8 @@ class ConfigManager {
                 claude_code: this._claude_code,
                 roocode:     this._roocode,
                 openclaw:    this._openclaw,
+                codex:       this._codex,
+                antigravity: this._antigravity,
             }, null, 4);
             fs.writeFileSync(CONFIG_PATH, configStr, 'utf-8');
 
@@ -75,24 +76,20 @@ class ConfigManager {
         return this._repo_path != null;
     }
 
-    isClaudeCodeEnabled(): boolean {
-        return this._claude_code != null;
-    }
-
-    isRooCodeEnabled(): boolean {   
-        return this._roocode != null;
-    }
-
-    isOpenclawEnabled(): boolean {
-        return this._openclaw != null;
-    }
+    isClaudeCodeEnabled(): boolean  { return this._claude_code  != null; }
+    isRooCodeEnabled(): boolean     { return this._roocode      != null; }
+    isOpenclawEnabled(): boolean    { return this._openclaw     != null; }
+    isCodexEnabled(): boolean       { return this._codex        != null; }
+    isAntigravityEnabled(): boolean { return this._antigravity  != null; }
 
     private _assign(config: GlobalConfig): void {
-        this._repo_path  = config.repo_path;
-        this._remote_url = config.remote_url;
+        this._repo_path   = config.repo_path;
+        this._remote_url  = config.remote_url;
         this._claude_code = config.claude_code;
-        this._roocode    = config.roocode;
-        this._openclaw   = config.openclaw;
+        this._roocode     = config.roocode;
+        this._openclaw    = config.openclaw;
+        this._codex       = config.codex ?? null;
+        this._antigravity = config.antigravity ?? null;
     }
 
     private _loadFromDisk(): void {
@@ -117,19 +114,23 @@ export const getConfig = (): GlobalConfig | null => {
     if (configManager.repo_path == null) { return null; }
 
     return {
-        repo_path:  configManager.repo_path,
-        remote_url: configManager.remote_url,
+        repo_path:   configManager.repo_path,
+        remote_url:  configManager.remote_url,
         claude_code: configManager.claude_code,
-        roocode:    configManager.roocode,
-        openclaw:   configManager.openclaw,
+        roocode:     configManager.roocode,
+        openclaw:    configManager.openclaw,
+        codex:       configManager.codex,
+        antigravity: configManager.antigravity,
     };
 };
 export const setConfig = (config: GlobalConfig): boolean => {
-    configManager.repo_path  = config.repo_path;
-    configManager.remote_url = config.remote_url;
+    configManager.repo_path   = config.repo_path;
+    configManager.remote_url  = config.remote_url;
     configManager.claude_code = config.claude_code;
-    configManager.roocode    = config.roocode;
-    configManager.openclaw   = config.openclaw;
+    configManager.roocode     = config.roocode;
+    configManager.openclaw    = config.openclaw;
+    configManager.codex       = config.codex ?? null;
+    configManager.antigravity = config.antigravity ?? null;
     return configManager.save();
 };
 export const isConfigExists = (): boolean => configManager.exists();
