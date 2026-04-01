@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.2.1] - 2026-04-02
+
+### Changed
+- Add `repository`, `homepage`, `bugs` fields to `package.json` for npm registry links
+- Update package description to "Sync your prompt library across AI coding tools from a single git repo"
+
+---
+
 ## [0.2.0] - 2026-04-02
 
 ### Added
