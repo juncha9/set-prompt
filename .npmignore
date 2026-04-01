@@ -8,6 +8,10 @@ tests/
 [Ss]rc/
 tsconfig*.json
 tsup*.config.ts
+vitest.config.ts
+
+coverage/
+*.js.map
 
 .env*
 !.env.example
