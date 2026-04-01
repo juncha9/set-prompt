@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { vol } from 'memfs';
 import path from 'path';
 import os from 'os';
-import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR } from '@/_defs';
+import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR } from '@/_defs';
 
 vi.mock('fs', async () => {
     const { fs } = await import('memfs');
@@ -15,9 +15,11 @@ vi.mock('@/_libs/config', () => ({
     configManager: {
         repo_path: null,
         roocode: null,
+        openclaw: null,
         save: vi.fn(),
         isClaudeCodeEnabled: vi.fn().mockReturnValue(false),
         isRooCodeEnabled: vi.fn().mockReturnValue(false),
+        isOpenclawEnabled: vi.fn().mockReturnValue(false),
     }
 }));
 
@@ -31,8 +33,10 @@ describe('uninstallCommand', () => {
         vi.clearAllMocks();
         configManager.repo_path = null;
         configManager.roocode = null;
+        configManager.openclaw = null;
         vi.mocked(configManager.isClaudeCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(false);
     });
 
     it('제거할 항목 없음 → "Nothing to remove." 출력', async () => {
@@ -127,6 +131,39 @@ describe('uninstallCommand', () => {
         await uninstallCommand();
 
         expect(vol.existsSync(path.join(ROO_DIR, 'skills', 'original.md'))).toBe(true);
+    });
+
+    it('openclaw 링크됨 → OPENCLAW_DIR 심볼릭 링크 제거', async () => {
+        vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
+        configManager.openclaw = { path: OPENCLAW_DIR, backup_path: null };
+
+        vol.mkdirSync(OPENCLAW_DIR, { recursive: true });
+        const fakeTarget = '/fake/repo/skills';
+        vol.mkdirSync(fakeTarget, { recursive: true });
+        vol.symlinkSync(fakeTarget, path.join(OPENCLAW_DIR, 'skills'));
+
+        await uninstallCommand();
+
+        expect(vol.existsSync(path.join(OPENCLAW_DIR, 'skills'))).toBe(false);
+    });
+
+    it('openclaw 백업 존재 → 복원', async () => {
+        vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
+        configManager.openclaw = { path: OPENCLAW_DIR, backup_path: OPENCLAW_BACKUP_DIR };
+
+        vol.mkdirSync(OPENCLAW_DIR, { recursive: true });
+        vol.mkdirSync(path.join(OPENCLAW_BACKUP_DIR, 'skills'), { recursive: true });
+        vol.writeFileSync(path.join(OPENCLAW_BACKUP_DIR, 'skills', 'original.md'), 'backup content');
+
+        const fakeTarget = '/fake/repo/skills';
+        vol.mkdirSync(fakeTarget, { recursive: true });
+        vol.symlinkSync(fakeTarget, path.join(OPENCLAW_DIR, 'skills'));
+
+        await uninstallCommand();
+
+        expect(vol.existsSync(path.join(OPENCLAW_DIR, 'skills', 'original.md'))).toBe(true);
     });
 
     it('성공 시 "Uninstalled." 출력', async () => {

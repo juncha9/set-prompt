@@ -12,7 +12,7 @@
         "build": "tsup && npm run copy_bin && npm run copy_templates",
         "copy_bin": "cpx \"src/bin/set-prompt.js\" dist/bin",
         "copy_templates": "cpx \"src/templates/**/*\" dist/templates",
-        "test": "vitest"
+        "test": "vitest --reporter=verbose"
     },
     "keywords": [
         "prompt-manager",

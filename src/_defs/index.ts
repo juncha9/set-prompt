@@ -8,7 +8,9 @@ export const CONFIG_PATH = path.join(HOME_DIR, 'config.json');
 export const REPO_DIR = path.join(HOME_DIR, 'repo');
 export const CLAUDE_CODE_DIR = path.join(HOME_DIR, 'claude-code');
 export const ROO_DIR = path.join(os.homedir(), '.roo');
-export const ROO_BACKUP_DIR = path.join(ROO_DIR, '.set-prompt-backup');
+export const ROO_BACKUP_DIR = path.join(ROO_DIR, 'SET_PROMPT_BACKUP');
+export const OPENCLAW_DIR = path.join(os.homedir(), '.openclaw', 'workspace');
+export const OPENCLAW_BACKUP_DIR = path.join(OPENCLAW_DIR, 'SET_PROMPT_BACKUP');
 
 export const REPO_CONFIG_FILENAME = 'set-prompt.toml';
 export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks'] as const;
@@ -22,6 +24,14 @@ export enum TOOLS {
 }
 
 export type AgentId = TOOLS;
+
+export const AGENT_PROMPT_DIRS: Record<TOOLS, readonly string[]> = {
+    [TOOLS.CLAUDECODE]:  ['skills', 'commands', 'hooks'],
+    [TOOLS.ROOCODE]:     ['skills', 'commands'],
+    [TOOLS.OPENCLAW]:    ['skills'],
+    [TOOLS.CODEX]:       ['skills', 'commands'],
+    [TOOLS.ANTIGRAVITY]: ['skills', 'commands'],
+};
 
 export const ALL_AGENTS = [
     { name: 'Claude Code',  value: TOOLS.CLAUDECODE },

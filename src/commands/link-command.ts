@@ -4,7 +4,7 @@ import os from 'os';
 import chalk from 'chalk';
 import { confirm, checkbox } from '@inquirer/prompts';
 import { pathExists } from 'fs-extra';
-import { CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, PROMPT_DIR_NAMES, ALL_AGENTS, TOOLS } from '@/_defs';
+import { CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR, AGENT_PROMPT_DIRS, ALL_AGENTS, TOOLS } from '@/_defs';
 import { configManager } from '@/_libs/config';
 
 const resolveRepoPath = (): string | null => {
@@ -64,7 +64,7 @@ export const linkClaudeCode = async (): Promise<void> => {
             console.log(chalk.dim('          │   └── plugin.json') + chalk.green(' ✓'));
 
             const linked: { dir: string; src: string }[] = [];
-            for (const dir of PROMPT_DIR_NAMES) {
+            for (const dir of AGENT_PROMPT_DIRS[TOOLS.CLAUDECODE]) {
                 const src = path.join(repoPath, dir);
                 const dest = path.join(pluginDir, dir);
 
@@ -184,12 +184,14 @@ export const linkRooCode = async (): Promise<void> => {
     console.log(chalk.green(`\nSetting up RooCode integration...`));
     console.log(chalk.dim(ROO_DIR));
 
+    const roocodeDirs = AGENT_PROMPT_DIRS[TOOLS.ROOCODE];
+
     const backupExistingRooCodeFiles = async (): Promise<boolean> => {
         try {
             fs.mkdirSync(ROO_DIR, { recursive: true });
 
             const dirsToBackup: string[] = [];
-            for (const dir of PROMPT_DIR_NAMES) {
+            for (const dir of roocodeDirs) {
                 const target = path.join(ROO_DIR, dir);
                 if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink() === false) {
                     dirsToBackup.push(dir);
@@ -219,7 +221,7 @@ export const linkRooCode = async (): Promise<void> => {
         try {
             const linked: { dir: string; src: string }[] = [];
 
-            for (const dir of PROMPT_DIR_NAMES) {
+            for (const dir of roocodeDirs) {
                 const src = path.join(repoPath, dir);
                 const dest = path.join(ROO_DIR, dir);
 
@@ -258,8 +260,85 @@ export const linkRooCode = async (): Promise<void> => {
 };
 
 export const linkOpenclaw = async (): Promise<void> => {
-    if (resolveRepoPath() == null) { return; }
-    console.log(chalk.yellow('OpenClaw integration is not yet implemented.'));
+    const repoPath = resolveRepoPath();
+    if (repoPath == null) { return; }
+
+    console.log(chalk.green(`\nSetting up OpenClaw integration...`));
+    console.log(chalk.dim(OPENCLAW_DIR));
+
+    const openclawDirs = AGENT_PROMPT_DIRS[TOOLS.OPENCLAW];
+
+    const backupExistingOpenclawFiles = async (): Promise<boolean> => {
+        try {
+            fs.mkdirSync(OPENCLAW_DIR, { recursive: true });
+
+            const dirsToBackup: string[] = [];
+            for (const dir of openclawDirs) {
+                const target = path.join(OPENCLAW_DIR, dir);
+                if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink() === false) {
+                    dirsToBackup.push(dir);
+                }
+            }
+
+            if (dirsToBackup.length === 0) {
+                return true;
+            }
+
+            fs.mkdirSync(OPENCLAW_BACKUP_DIR, { recursive: true });
+            for (const dir of dirsToBackup) {
+                const src = path.join(OPENCLAW_DIR, dir);
+                const dest = path.join(OPENCLAW_BACKUP_DIR, dir);
+                fs.renameSync(src, dest);
+                console.log(chalk.dim(`  backed up: ${dir}/ → ${dest}`));
+            }
+
+            return true;
+        } catch (ex: any) {
+            console.error(chalk.red(`❌ Failed to backup existing directories: ${ex.message}`));
+            return false;
+        }
+    };
+
+    const setOpenclawAssets = async (): Promise<boolean> => {
+        try {
+            const linked: { dir: string; src: string }[] = [];
+
+            for (const dir of openclawDirs) {
+                const src = path.join(repoPath, dir);
+                const dest = path.join(OPENCLAW_DIR, dir);
+
+                if ((await pathExists(src)) === false) { continue; }
+
+                if (fs.existsSync(dest)) {
+                    fs.rmSync(dest, { recursive: true, force: true });
+                }
+
+                const symlinkType = process.platform === 'win32' ? 'junction' : 'dir';
+                fs.symlinkSync(src, dest, symlinkType);
+                linked.push({ dir, src });
+            }
+
+            for (const { dir, src } of linked) {
+                const isLast = linked[linked.length - 1].dir === dir;
+                const branch = isLast ? '└──' : '├──';
+                console.log(chalk.dim(`  ${branch} `) + chalk.bold(`${dir}/`) + chalk.dim(` → ${src}`) + chalk.green(' ✓'));
+            }
+
+            return true;
+        } catch (ex: any) {
+            console.error(chalk.red(`❌ Failed to create symlinks: ${ex.message}`));
+            return false;
+        }
+    };
+
+    const backupOk = await backupExistingOpenclawFiles();
+    if (backupOk === false) { return; }
+
+    const linkOk = await setOpenclawAssets();
+    if (linkOk === false) { return; }
+
+    configManager.openclaw = { path: OPENCLAW_DIR, backup_path: OPENCLAW_BACKUP_DIR };
+    configManager.save();
 };
 
 export const linkCodex = async (): Promise<void> => {

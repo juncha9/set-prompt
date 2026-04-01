@@ -3,7 +3,7 @@ import path from 'path';
 import os from 'os';
 import chalk from 'chalk';
 import { confirm } from '@inquirer/prompts';
-import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR, PROMPT_DIR_NAMES, ROO_DIR, ROO_BACKUP_DIR } from '@/_defs';
+import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR, AGENT_PROMPT_DIRS, TOOLS } from '@/_defs';
 import { configManager } from '@/_libs/config';
 
 const PLUGIN_NAME = 'set-prompt';
@@ -76,7 +76,7 @@ const rollbackRooCode = (): void => {
     const backupPath = configManager.roocode?.backup_path ?? ROO_BACKUP_DIR;
 
     // Remove symlinks
-    for (const dir of PROMPT_DIR_NAMES) {
+    for (const dir of AGENT_PROMPT_DIRS[TOOLS.ROOCODE]) {
         const target = path.join(ROO_DIR, dir);
         if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink()) {
             fs.unlinkSync(target);
@@ -87,7 +87,7 @@ const rollbackRooCode = (): void => {
     // Restore backup if exists
     if (fs.existsSync(backupPath) === false) { return; }
     try {
-        for (const dir of PROMPT_DIR_NAMES) {
+        for (const dir of AGENT_PROMPT_DIRS[TOOLS.ROOCODE]) {
             const src = path.join(backupPath, dir);
             const dest = path.join(ROO_DIR, dir);
             if (fs.existsSync(src) === false) { continue; }
@@ -100,6 +100,34 @@ const rollbackRooCode = (): void => {
     }
 };
 
+const rollbackOpenclaw = (): void => {
+    const backupPath = configManager.openclaw?.backup_path ?? OPENCLAW_BACKUP_DIR;
+
+    // Remove symlinks
+    for (const dir of AGENT_PROMPT_DIRS[TOOLS.OPENCLAW]) {
+        const target = path.join(OPENCLAW_DIR, dir);
+        if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink()) {
+            fs.unlinkSync(target);
+            console.log(chalk.dim(`  removed symlink: ${target}`));
+        }
+    }
+
+    // Restore backup if exists
+    if (fs.existsSync(backupPath) === false) { return; }
+    try {
+        for (const dir of AGENT_PROMPT_DIRS[TOOLS.OPENCLAW]) {
+            const src = path.join(backupPath, dir);
+            const dest = path.join(OPENCLAW_DIR, dir);
+            if (fs.existsSync(src) === false) { continue; }
+            fs.renameSync(src, dest);
+            console.log(chalk.dim(`  restored: ${dir}/`));
+        }
+        fs.rmdirSync(backupPath);
+    } catch (ex: any) {
+        console.error(chalk.red(`  ❌ Failed to restore OpenClaw backup: ${ex.message}`));
+    }
+};
+
 export const uninstallCommand = async (): Promise<void> => {
     const targets = [
         { label: `Claude Code plugin dir  ${chalk.dim(CLAUDE_CODE_DIR)}`, path: CLAUDE_CODE_DIR },
@@ -109,8 +137,9 @@ export const uninstallCommand = async (): Promise<void> => {
 
     const hasClaudeCodeSettings = configManager.isClaudeCodeEnabled();
     const hasRooCode = configManager.isRooCodeEnabled();
+    const hasOpenclaw = configManager.isOpenclawEnabled();
 
-    if (targets.length === 0 && hasClaudeCodeSettings === false && hasRooCode === false) {
+    if (targets.length === 0 && hasClaudeCodeSettings === false && hasRooCode === false && hasOpenclaw === false) {
         console.log(chalk.yellow('Nothing to remove.'));
         return;
     }
@@ -123,6 +152,9 @@ export const uninstallCommand = async (): Promise<void> => {
     }
     if (hasRooCode) {
         console.log(`  RooCode symlinks in ${chalk.dim(ROO_DIR)} ${chalk.dim('(backup will be restored)')}`);
+    }
+    if (hasOpenclaw) {
+        console.log(`  OpenClaw symlinks in ${chalk.dim(OPENCLAW_DIR)} ${chalk.dim('(backup will be restored)')}`);
     }
 
     const ok = await confirm({ message: 'Proceed?', default: false });
@@ -137,6 +169,10 @@ export const uninstallCommand = async (): Promise<void> => {
 
     if (hasRooCode) {
         rollbackRooCode();
+    }
+
+    if (hasOpenclaw) {
+        rollbackOpenclaw();
     }
 
     for (const t of targets) {

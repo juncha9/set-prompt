@@ -10,9 +10,9 @@ But every time you try a new AI agent, you have to set it all up again from scra
 my-prompts/ (git repo)
     └── skills/, commands/, hooks/
             ↓ set-prompt install <git-url>
-            ↓ set-prompt link claudecode   →  ~/.set-prompt/claudecode/  (Claude Code plugin)
+            ↓ set-prompt link claudecode   →  ~/.set-prompt/claudecode/    (Claude Code plugin)
             ↓ set-prompt link roocode       →  ~/.roo/                     (symlinks)
-            ↓ set-prompt link openclaw      →  (not yet implemented)
+            ↓ set-prompt link openclaw      →  ~/.openclaw/workspace/      (symlinks)
 ```
 
 ## 📦 Installation
@@ -62,7 +62,8 @@ set-prompt link roocode      # RooCode only
 ```
 
 - **Claude Code**: creates a plugin at `~/.set-prompt/claudecode/`, registers via `~/.claude/settings.json`
-- **RooCode**: symlinks `skills/`, `commands/`, `hooks/` into `~/.roo/` — backs up existing dirs first
+- **RooCode**: symlinks `skills/`, `commands/` into `~/.roo/` — backs up existing dirs first
+- **OpenClaw**: symlinks `skills/` into `~/.openclaw/workspace/` — backs up existing dir first
 
 ## 📋 Commands
 
@@ -73,7 +74,7 @@ set-prompt link roocode      # RooCode only
 | `link [agent]` | Link prompts to AI agents (interactive if omitted) | ✅ |
 | `link claudecode` | Link to Claude Code | ✅ |
 | `link roocode` | Link to RooCode | ✅ |
-| `link openclaw` | Link to OpenClaw | 🔜 planned |
+| `link openclaw` | Link to OpenClaw | ✅ |
 | `link codex` | Link to Codex | 🔜 planned |
 | `link antigravity` | Link to Antigravity | 🔜 planned |
 | `status` | Show current repo and linked agents | ✅ |
@@ -83,7 +84,6 @@ set-prompt link roocode      # RooCode only
 
 | Agent | Provider | Status |
 |-------|----------|--------|
-| OpenClaw | — | 🔜 planned |
 | Codex | OpenAI | 🔜 planned |
 | Antigravity | Google | 🔜 planned |
 
@@ -110,6 +110,7 @@ npm test                         # Run tests with vitest
 
 - **Claude Code** — writes to `~/.claude/settings.json`
 - **RooCode** — replaces directories in `~/.roo/`
+- **OpenClaw** — replaces directories in `~/.openclaw/workspace/`
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 
@@ -140,13 +141,16 @@ Stored at `~/.set-prompt/config.json`, managed via `ConfigManager`.
         └── hooks/       → symlink to repo/hooks/
 
 ~/.roo/                  # RooCode integration (symlinks)
-├── .set-prompt-backup/  # backup of original dirs before linking
+├── SET_PROMPT_BACKUP/  # backup of original dirs before linking
 │   ├── skills/
-│   ├── commands/
-│   └── hooks/
+│   └── commands/
 ├── skills/              → symlink to repo/skills/
-├── commands/            → symlink to repo/commands/
-└── hooks/               → symlink to repo/hooks/
+└── commands/            → symlink to repo/commands/
+
+~/.openclaw/workspace/   # OpenClaw integration (symlinks)
+├── SET_PROMPT_BACKUP/  # backup of original dirs before linking
+│   └── skills/
+└── skills/              → symlink to repo/skills/
 ```
 
 ## 🖥️ Requirements

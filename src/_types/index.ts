@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { z } from 'zod';
 
 export const ClaudeCodeConfigSchema = z.object({
@@ -7,11 +6,12 @@ export const ClaudeCodeConfigSchema = z.object({
 
 export const RoocodeConfigSchema = z.object({
     path: z.string().nullable(),                  // ~/.roo
-    backup_path: z.string().nullish().optional(),  // ~/.roo/.set-prompt-backup
+    backup_path: z.string().nullish().optional(),  // ~/.roo/SET_PROMPT_BACKUP
 });
 
 export const OpenclawConfigSchema = z.object({
     path: z.string().nullable(),
+    backup_path: z.string().nullish().optional(),
 });
 
 export const CodexConfigSchema = z.object({
