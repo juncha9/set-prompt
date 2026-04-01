@@ -102,6 +102,8 @@ describe('scaffoldCommand', () => {
         expect(result).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'skills'))).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'commands'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'hooks'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'agents'))).toBe(true);
     });
 
     it('--force → confirm 없이 디렉터리 생성', async () => {
@@ -113,6 +115,8 @@ describe('scaffoldCommand', () => {
         expect(confirm).not.toHaveBeenCalled();
         expect(vol.existsSync(path.join(FAKE_REPO, 'skills'))).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'commands'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'hooks'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'agents'))).toBe(true);
     });
 
     it('--force → SET_PROMPT_GUIDE.md 생성', async () => {

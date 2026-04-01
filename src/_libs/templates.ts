@@ -5,15 +5,19 @@ export const SET_PROMPT_GUIDE = `# Set Prompt Repository Guide
 ## Structure
 
 \`\`\`
-├── set-prompt.yaml        # Repository configuration
+├── set-prompt.toml        # Repository configuration
 ├── skills/
 │   └── <skill-name>/
 │       ├── SKILL.md       # Platform-specific frontmatter + prompt content
 │       └── ...            # Supporting files (scripts, configs, etc.)
-└── commands/
-    └── <command-name>/
-        ├── COMMAND.md     # Platform-specific frontmatter + prompt content
-        └── ...            # Supporting files
+├── commands/
+│   └── <command-name>/
+│       ├── COMMAND.md     # Platform-specific frontmatter + prompt content
+│       └── ...            # Supporting files
+├── hooks/                 # Lifecycle shell hooks
+└── agents/                # Agent definitions (Claude Code)
+    └── <agent-name>/
+        └── AGENT.md
 \`\`\`
 
 ## Frontmatter Reference
@@ -140,6 +144,32 @@ command-tool: "Bash"
 
 ---
 
+### Agents
+
+Custom subagent definitions loaded by Claude Code.
+
+\`\`\`yaml
+---
+name: "my-agent"
+description: "What this agent does and when to use it"
+allowed-tools:
+  - Read
+  - Bash
+model: sonnet
+context: fork
+---
+\`\`\`
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| \`name\` | Yes | Display name — lowercase, numbers, hyphens only (max 64 chars) |
+| \`description\` | Yes | When and how to use this agent. Claude uses this to decide when to spawn it. |
+| \`allowed-tools\` | No | Tools this agent can use without asking |
+| \`model\` | No | Model override. \`sonnet\` or \`haiku\` |
+| \`context\` | No | \`fork\` = run in isolated subagent context |
+
+---
+
 ### Hooks
 
 Lifecycle shell commands (or LLM prompts) that fire at specific points. Hooks in skill/command frontmatter are scoped to that component — active while it runs, removed when it finishes.
@@ -205,10 +235,14 @@ echo '{"decision":"block","reason":"Tests must pass first"}'
 ## Usage
 
 \`\`\`bash
-# Register this repo as prompt source
-set-prompt use .
+# Scaffold this repo's directory structure
+set-prompt scaffold .
 
-# Validate prompt definitions
-set-prompt validate skills/example/SKILL.md
+# Install from remote and link to AI tools
+set-prompt install https://github.com/you/my-prompts
+set-prompt link
+
+# Pull latest changes
+set-prompt update
 \`\`\`
 `;

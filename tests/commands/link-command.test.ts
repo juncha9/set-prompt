@@ -103,6 +103,19 @@ describe('linkClaudeCode', () => {
         expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
     });
 
+    it('agents 디렉토리 존재 시 심볼릭 링크 생성', async () => {
+        const repoPath = '/fake/repo';
+        configManager.repo_path = repoPath;
+
+        vol.fromJSON({ [`${repoPath}/agents/test.md`]: 'test' });
+        vi.mocked(pathExists).mockResolvedValue(true);
+
+        await linkClaudeCode();
+
+        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'set-prompt', 'agents');
+        expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
+    });
+
     it('성공 시 configManager.claude_code에 path 저장', async () => {
         configManager.repo_path = '/fake/repo';
         vi.mocked(pathExists).mockResolvedValue(false);
