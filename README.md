@@ -91,7 +91,15 @@ set-prompt link roocode      # RooCode only
 
 ## ☕ Support
 
-I'm an indie developer working on this as a side project alongside my day job. If `set-prompt` saves you some time, buying me a coffee would mean a lot!
+`set-prompt` is a solo side project. I have a full-time job, so there are weeks where I can't touch it — but I read every issue and do my best to respond as quickly as I can. Your support genuinely makes a difference in how much time I can dedicate to this.
+
+**Ways to help:**
+
+- ⭐ **Star this repo** — the simplest thing, and it helps more than you'd think
+- 🐛 **Report bugs** — open an [issue](https://github.com/juncha9/set-prompt/issues) with steps to reproduce
+- 💡 **Request features** — share ideas or use cases via [issues](https://github.com/juncha9/set-prompt/issues)
+- 🔧 **Submit a PR** — new agent integrations (Codex, Antigravity, ...) are especially welcome
+- ☕ **Sponsor** — if `set-prompt` saves you time, buying me a coffee means I can keep working on it
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github-sponsors)](https://github.com/sponsors/juncha9)
 
