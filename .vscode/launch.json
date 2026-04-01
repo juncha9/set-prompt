@@ -4,16 +4,6 @@
     // 자세한 내용을 보려면 https://go.microsoft.com/fwlink/?linkid=830387을(를) 방문하세요.
     "version": "1.0.0",
     "configurations": [
-
-        {
-            "name": "start:dev",
-            "command": "npm run start:dev",
-            "request": "launch",
-            "type": "node-terminal",
-            "cwd": "${workspaceFolder}",
-            "outputCapture": "std",
-            "sourceMaps": true,
-        },
         {
             "name": "build",
             "command": "npm run build",
@@ -29,6 +19,69 @@
             "type": "node-terminal",
             "cwd": "${workspaceFolder}",
             "outputCapture": "console",
+        },
+        {
+            "name": "cmd: scaffold",
+            "command": "set-prompt scaffold",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: install",
+            "command": "set-prompt install https://github.com/juncha9/my-prompts",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: link",
+            "command": "set-prompt link",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: link claudecode",
+            "command": "set-prompt link claudecode",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: link roocode",
+            "command": "set-prompt link roocode",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: link openclaw",
+            "command": "set-prompt link openclaw",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: update",
+            "command": "set-prompt update",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: status",
+            "command": "set-prompt status",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
+        },
+        {
+            "name": "cmd: uninstall",
+            "command": "set-prompt uninstall",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}",
         },
     ]
 }
