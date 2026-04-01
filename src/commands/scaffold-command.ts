@@ -7,7 +7,7 @@ import { SET_PROMPT_GUIDE } from '@/_libs/templates';
 import { configManager } from '@/_libs/config';
 
 const REQUIRED_DIRS = ['skills', 'commands'] as const;
-const OPTIONAL_DIRS = ['hooks'] as const;
+const OPTIONAL_DIRS = ['hooks', 'agents'] as const;
 
 
 

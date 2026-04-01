@@ -13,7 +13,7 @@ export const OPENCLAW_DIR = path.join(os.homedir(), '.openclaw', 'workspace');
 export const OPENCLAW_BACKUP_DIR = path.join(OPENCLAW_DIR, 'SET_PROMPT_BACKUP');
 
 export const REPO_CONFIG_FILENAME = 'set-prompt.toml';
-export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks'] as const;
+export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks', 'agents'] as const;
 
 export enum TOOLS {
     CLAUDECODE   = 'claudecode',
@@ -26,7 +26,7 @@ export enum TOOLS {
 export type AgentId = TOOLS;
 
 export const AGENT_PROMPT_DIRS: Record<TOOLS, readonly string[]> = {
-    [TOOLS.CLAUDECODE]:  ['skills', 'commands', 'hooks'],
+    [TOOLS.CLAUDECODE]:  ['skills', 'commands', 'hooks', "agents"],
     [TOOLS.ROOCODE]:     ['skills', 'commands'],
     [TOOLS.OPENCLAW]:    ['skills'],
     [TOOLS.CODEX]:       ['skills', 'commands'],

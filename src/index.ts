@@ -9,6 +9,7 @@ import { linkCommand } from '@/commands/link-command';
 import { uninstallCommand } from '@/commands/uninstall-command';
 import { scaffoldCommand } from '@/commands/scaffold-command';
 import { statusCommand } from '@/commands/status-command';
+import { updateCommand } from '@/commands/update-command';
 import { configManager } from '@/_libs/config';
 
 // Graceful exit on Ctrl+C
@@ -75,6 +76,13 @@ program
     .description(`📋 Show registered ${chalk.cyan('repo')} and which ${chalk.cyan('agents')} are linked`)
     .action(() => {
         statusCommand();
+    });
+
+program
+    .command('update')
+    .description(`🔄 Fetch and pull the latest changes from the ${chalk.cyan('remote repo')}`)
+    .action(() => {
+        updateCommand();
     });
 
 program

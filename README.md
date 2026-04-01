@@ -43,7 +43,8 @@ my-prompts/
 ├── commands/
 │   └── <command-name>/
 │       └── COMMAND.md
-└── hooks/
+├── hooks/
+└── agents/
 ```
 
 ### 2. Register the repository
@@ -77,6 +78,7 @@ set-prompt link roocode      # RooCode only
 | `link openclaw` | Link to OpenClaw | ✅ |
 | `link codex` | Link to Codex | 🔜 planned |
 | `link antigravity` | Link to Antigravity | 🔜 planned |
+| `update` | Fetch and pull latest changes from remote repo | ✅ |
 | `status` | Show current repo and linked agents | ✅ |
 | `uninstall` | Remove all set-prompt data | ✅ |
 

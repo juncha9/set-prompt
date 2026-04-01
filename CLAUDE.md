@@ -49,9 +49,10 @@ npm run build                    # tsc + copy_templates
 | `link [agent]` | Link prompts to AI agents (interactive if omitted) | ✅ |
 | `link claudecode` | Link to Claude Code | ✅ |
 | `link roocode` | Link to RooCode | ✅ |
-| `link openclaw` | Link to OpenClaw | 🔜 planned |
+| `link openclaw` | Link to OpenClaw | ✅ |
 | `link codex` | Link to Codex | 🔜 planned |
 | `link antigravity` | Link to Antigravity | 🔜 planned |
+| `update` | Fetch and pull latest changes from remote repo | ✅ |
 | `status` | Show current repo and linked agents | ✅ |
 | `uninstall` | Remove all set-prompt data | ✅ |
 
