@@ -104,6 +104,10 @@ describe('scaffoldCommand', () => {
         expect(vol.existsSync(path.join(FAKE_REPO, 'commands'))).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'hooks'))).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'agents'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'skills', '.gitkeep'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'commands', '.gitkeep'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'hooks', '.gitkeep'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'agents', '.gitkeep'))).toBe(true);
     });
 
     it('--force → confirm 없이 디렉터리 생성', async () => {
@@ -117,6 +121,10 @@ describe('scaffoldCommand', () => {
         expect(vol.existsSync(path.join(FAKE_REPO, 'commands'))).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'hooks'))).toBe(true);
         expect(vol.existsSync(path.join(FAKE_REPO, 'agents'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'skills', '.gitkeep'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'commands', '.gitkeep'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'hooks', '.gitkeep'))).toBe(true);
+        expect(vol.existsSync(path.join(FAKE_REPO, 'agents', '.gitkeep'))).toBe(true);
     });
 
     it('--force → SET_PROMPT_GUIDE.md 생성', async () => {
@@ -136,5 +144,29 @@ describe('scaffoldCommand', () => {
 
         // 기존 파일이 유지되어야 함
         expect(vol.existsSync(path.join(FAKE_REPO, 'skills', 'existing.md'))).toBe(true);
+    });
+
+    it('기존 디렉터리에 .gitkeep이 없으면 추가', async () => {
+        // skills만 존재 → valid=false → scaffold 실행
+        vol.mkdirSync(path.join(FAKE_REPO, 'skills'), { recursive: true });
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        await scaffoldCommand(FAKE_REPO);
+
+        // 기존 디렉터리에도 .gitkeep 추가됨
+        expect(vol.existsSync(path.join(FAKE_REPO, 'skills', '.gitkeep'))).toBe(true);
+        // 새로 생성된 디렉터리에도 .gitkeep 추가됨
+        expect(vol.existsSync(path.join(FAKE_REPO, 'commands', '.gitkeep'))).toBe(true);
+    });
+
+    it('기존 디렉터리에 .gitkeep이 있으면 덮어쓰지 않음', async () => {
+        // skills만 존재 → valid=false → scaffold 실행
+        vol.mkdirSync(path.join(FAKE_REPO, 'skills'), { recursive: true });
+        vol.writeFileSync(path.join(FAKE_REPO, 'skills', '.gitkeep'), 'existing');
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        await scaffoldCommand(FAKE_REPO);
+
+        expect(vol.readFileSync(path.join(FAKE_REPO, 'skills', '.gitkeep'), 'utf-8')).toBe('existing');
     });
 });

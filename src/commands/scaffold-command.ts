@@ -106,10 +106,17 @@ export const scaffoldCommand = async (localPath?: string, options: { force?: boo
                 const dirPath = path.join(targetPath, dirName);
                 if (fs.existsSync(dirPath)) {
                     console.warn(chalk.yellow(`Directory already exists: '${dirName}' (skipping)`));
-                    continue;
+                } else {
+                    fs.mkdirSync(dirPath, { recursive: true });
+                    created.push(`  ${dirName}/`);
                 }
-                fs.mkdirSync(dirPath, { recursive: true });
-                created.push(`  ${dirName}/`);
+                const gitkeepPath = path.join(dirPath, '.gitkeep');
+                if (!fs.existsSync(gitkeepPath)) {
+                    fs.writeFileSync(gitkeepPath, '', { encoding: 'utf-8' });
+                    if (!created.includes(`  ${dirName}/`)) {
+                        created.push(`  ${dirName}/.gitkeep`);
+                    }
+                }
             }
 
             if (created.length > 0) {
