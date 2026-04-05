@@ -60,15 +60,20 @@ customInstructions: "Additional behavior guidelines..."
 
 # OpenClaw
 homepage: "https://github.com/you/my-skill"
-metadata: {"openclaw":{"emoji":"🔧","os":["darwin","linux"]}}
+user-invocable: true
+disable-model-invocation: false
+metadata: {"os":["darwin","linux"],"requires":{"bins":["git"],"env":["MY_API_KEY"]}}
+
+# Antigravity
+name: my-skill
+description: "What this skill does and when to use it"
 ---
 \`\`\`
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
-| \`name\` | Yes | All | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). RooCode: emoji allowed. |
+| \`name\` | Yes | All | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). RooCode: emoji allowed. Antigravity: optional, defaults to folder name. |
 | \`description\` | Yes | All | What it does and when to use it. Claude uses this to decide auto-loading. |
-| \`disable-model-invocation\` | No | CC, OpenClaw | \`true\` = prevent auto-loading, manual \`/name\` only. (default: \`false\`) |
 | \`allowed-tools\` | No | Claude Code | Tools Claude can use without asking. e.g. \`Read\` \`Write\` \`Edit\` \`Bash\` \`Grep\` \`Glob\` |
 | \`model\` | No | Claude Code | Model to use when active. \`sonnet\` or \`haiku\` |
 | \`context\` | No | Claude Code | \`fork\` = run in a forked subagent context |
@@ -79,15 +84,14 @@ metadata: {"openclaw":{"emoji":"🔧","os":["darwin","linux"]}}
 | \`groups\` | Yes | RooCode | Tool permissions: \`read\` \`edit\` \`command\` \`mcp\` \`browser\` |
 | \`whenToUse\` | No | RooCode | Guide for auto mode selection |
 | \`customInstructions\` | No | RooCode | Additional behavior guidelines |
-| \`homepage\` | No | OpenClaw | Website URL shown in the Skills UI |
-| \`metadata\` | No | OpenClaw | Single-line JSON for platform gating. e.g. \`os\`, \`requires.bins\`, \`requires.env\` |
-
-RooCode file-restricted edit example:
-\`\`\`yaml
-groups:
-  - read
-  - [edit, {fileRegex: '\\.(md|ts)$', description: "Markdown and TS only"}]
-\`\`\`
+| \`groups\` (restricted) | No | RooCode | Restrict edit to file patterns: \`[edit, {fileRegex: '\\.(md|ts)$', description: "..."}]\` |
+| \`metadata\` | No | OpenClaw | Single-line JSON for platform gating: \`os\` (platform filter), \`requires.bins\` (required binaries), \`requires.env\` (required env vars) |
+| \`homepage\` | No | OpenClaw | URL shown as "Website" in the macOS Skills UI. Also settable via \`metadata.openclaw.homepage\`. |
+| \`user-invocable\` | No | OpenClaw | \`false\` = hidden from \`/\` menu. (default: \`true\`) |
+| \`disable-model-invocation\` | No | CC, OpenClaw | \`true\` = skill excluded from model prompt, still available via user invocation. (default: \`false\`) |
+| \`command-dispatch\` | No | OpenClaw | \`"tool"\` = bypass model, dispatch directly to a tool |
+| \`command-tool\` | No | OpenClaw | Tool to invoke when \`command-dispatch: "tool"\` |
+| \`command-arg-mode\` | No | OpenClaw | How arguments are forwarded to the tool. (default: \`"raw"\`) |
 
 ---
 
@@ -138,9 +142,6 @@ command-tool: "Bash"
 | \`context\` | No | Claude Code | \`fork\` = run in a forked subagent context |
 | \`agent\` | No | Claude Code | Subagent type when \`context: fork\`. e.g. \`general-purpose\` \`Explore\` \`Plan\` |
 | \`hooks\` | No | Claude Code | Lifecycle hooks for pre/post processing. |
-| \`command-dispatch\` | No | OpenClaw | \`"tool"\` = bypass model, dispatch directly to a tool |
-| \`command-tool\` | No | OpenClaw | Tool to invoke when \`command-dispatch: "tool"\` |
-| \`command-arg-mode\` | No | OpenClaw | How arguments are forwarded to the tool. (default: \`"raw"\`) |
 
 ---
 

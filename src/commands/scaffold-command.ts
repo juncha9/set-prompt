@@ -97,10 +97,8 @@ export const scaffoldCommand = async (localPath?: string, options: { force?: boo
             const created: string[] = [];
 
             const guideMdPath = path.join(targetPath, 'SET_PROMPT_GUIDE.md');
-            if (options.force === true || fs.existsSync(guideMdPath) === false) {
-                fs.writeFileSync(guideMdPath, SET_PROMPT_GUIDE, { encoding: 'utf-8', flag: 'w' });
-                created.push('  SET_PROMPT_GUIDE.md');
-            }
+            fs.writeFileSync(guideMdPath, SET_PROMPT_GUIDE, { encoding: 'utf-8', flag: 'w' });
+            created.push('  SET_PROMPT_GUIDE.md');
 
             for (const dirName of PROMPT_DIR_NAMES) {
                 const dirPath = path.join(targetPath, dirName);

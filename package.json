@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.2.2",
+    "version": "0.3.0",
     "description": "Sync your prompt library across AI coding tools from a single git repo",
     "main": "dist/index.js",
     "bin": {
@@ -9,9 +9,8 @@
     "type": "module",
     "scripts": {
         "start:dev": "tsx src/index.ts",
-        "build": "tsup && npm run copy_bin && npm run copy_templates",
+        "build": "rimraf dist && tsup && npm run copy_bin",
         "copy_bin": "cpx \"src/bin/set-prompt.js\" dist/bin",
-        "copy_templates": "cpx \"src/templates/**/*\" dist/templates",
         "test": "vitest --reporter=verbose"
     },
     "keywords": [
@@ -50,6 +49,7 @@
         "cpx": "^1.5.0",
         "memfs": "^4.56.11",
         "prettier": "^3.8.1",
+        "rimraf": "^6.1.3",
         "tsup": "^8.5.1",
         "tsx": "^4.21.0",
         "typescript": "^5.9.3",

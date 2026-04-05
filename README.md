@@ -6,13 +6,19 @@ But every time you try a new AI agent, you have to set it all up again from scra
 
 `set-prompt` was built to solve this. It maintains a single git repository of prompts and symlinks them into each tool's expected location — so your prompt set stays in one place, stays versioned, and stays consistent across every AI agent you use.
 
+One repo. Every agent. Always in sync.
+
 ```
-my-prompts/ (git repo)
-    └── skills/, commands/, hooks/
-            ↓ set-prompt install <git-url>
-            ↓ set-prompt link claudecode   →  ~/.set-prompt/claudecode/    (Claude Code plugin)
-            ↓ set-prompt link roocode       →  ~/.roo/                     (symlinks)
-            ↓ set-prompt link openclaw      →  ~/.openclaw/workspace/      (symlinks)
+                        my-prompts/ (git repo)
+                        ├── skills/
+                        ├── commands/
+                        └── hooks/
+                               │
+              ┌────────────────┼─────────────────┬─────────────────┐
+              ▼                ▼                  ▼                 ▼
+    ~/.set-prompt/         ~/.roo/         ~/.openclaw/      ~/.gemini/
+    claudecode/                            workspace/        antigravity/
+    (Claude Code plugin)   (symlinks)      (symlinks)        (symlinks)
 ```
 
 ## 📦 Installation
@@ -25,69 +31,86 @@ npx set-prompt <command>
 
 ## 🚀 Workflow
 
-### 1. Create a prompt repository
+### Step 1 — Install set-prompt
+
+```bash
+npm install -g set-prompt
+```
+
+Or run without installing:
+
+```bash
+npx set-prompt <command>
+```
+
+---
+
+### Step 2 — Connect your prompt repository
+
+Point `set-prompt` at a git repo containing your prompts. It clones it to `~/.set-prompt/repo/` and registers it as your prompt source.
+
+```bash
+set-prompt install https://github.com/you/my-prompts
+```
+
+Don't have a repo yet? Scaffold one first:
 
 ```bash
 mkdir my-prompts && cd my-prompts && git init
 set-prompt scaffold .
 ```
 
-Creates:
+This creates the expected directory structure:
 
 ```
 my-prompts/
-├── SET_PROMPT_GUIDE.md
 ├── skills/
-│   └── <skill-name>/
-│       └── SKILL.md
 ├── commands/
-│   └── <command-name>/
-│       └── COMMAND.md
 ├── hooks/
 └── agents/
 ```
 
-### 2. Register the repository
+---
+
+### Step 3 — Link to AI agents 🔗
 
 ```bash
-# remote git URL — cloned to ~/.set-prompt/repo/
-set-prompt install https://github.com/you/my-prompts
+set-prompt link              # interactive checkbox — select agents to link
+set-prompt link claudecode   # link Claude Code only
+set-prompt link roocode      # link RooCode only
+set-prompt link openclaw     # link OpenClaw only
+set-prompt link antigravity  # link Antigravity only
 ```
 
-### 3. Link to AI tools 🔗
+The interactive mode shows all agents with their current state. **Check to link, uncheck to unlink** — existing directories are backed up before being replaced.
+
+| Agent | Where prompts land | What gets linked |
+|---|---|---|
+| Claude Code | `~/.set-prompt/claudecode/` (plugin) | `skills/`, `commands/`, `hooks/`, `agents/` |
+| RooCode | `~/.roo/` | `skills/`, `commands/` |
+| OpenClaw | `~/.openclaw/workspace/` | `skills/` |
+| Antigravity | `~/.gemini/antigravity/` | `skills/` |
+
+---
+
+### Step 4 — Uninstall
+
+Removes all set-prompt data, reverts symlinks, and restores any backed-up directories.
 
 ```bash
-set-prompt link              # interactive selection
-set-prompt link claudecode  # Claude Code only
-set-prompt link roocode      # RooCode only
+set-prompt uninstall
 ```
-
-- **Claude Code**: creates a plugin at `~/.set-prompt/claudecode/`, registers via `~/.claude/settings.json`
-- **RooCode**: symlinks `skills/`, `commands/` into `~/.roo/` — backs up existing dirs first
-- **OpenClaw**: symlinks `skills/` into `~/.openclaw/workspace/` — backs up existing dir first
 
 ## 📋 Commands
 
-| Command | Description | Status |
-|---------|-------------|--------|
-| `scaffold [path]` | Verify and scaffold repo structure | ✅ |
-| `install <url>` | Clone remote git repo and register as prompt source | ✅ |
-| `link [agent]` | Link prompts to AI agents (interactive if omitted) | ✅ |
-| `link claudecode` | Link to Claude Code | ✅ |
-| `link roocode` | Link to RooCode | ✅ |
-| `link openclaw` | Link to OpenClaw | ✅ |
-| `link codex` | Link to Codex | 🔜 planned |
-| `link antigravity` | Link to Antigravity | 🔜 planned |
-| `update` | Fetch and pull latest changes from remote repo | ✅ |
-| `status` | Show current repo and linked agents | ✅ |
-| `uninstall` | Remove all set-prompt data | ✅ |
-
-## 🗓️ Planned Integrations
-
-| Agent | Provider | Status |
-|-------|----------|--------|
-| Codex | OpenAI | 🔜 planned |
-| Antigravity | Google | 🔜 planned |
+| Command | Description |
+|---------|-------------|
+| `install <url>` | Clone remote git repo and register as prompt source |
+| `link [agent]` | Link/unlink agents interactively, or target one directly |
+| `update` | Fetch and pull latest changes from remote repo |
+| `status` | Show current repo and linked agents |
+| `scaffold [path]` | Verify and create required directories in a prompt repo |
+| `uninstall` | Remove all set-prompt data and restore backups |
 
 ## ☕ Support
 
@@ -158,6 +181,11 @@ Stored at `~/.set-prompt/config.json`, managed via `ConfigManager`.
 └── commands/            → symlink to repo/commands/
 
 ~/.openclaw/workspace/   # OpenClaw integration (symlinks)
+├── SET_PROMPT_BACKUP/  # backup of original dirs before linking
+│   └── skills/
+└── skills/              → symlink to repo/skills/
+
+~/.gemini/antigravity/   # Antigravity integration (symlinks)
 ├── SET_PROMPT_BACKUP/  # backup of original dirs before linking
 │   └── skills/
 └── skills/              → symlink to repo/skills/

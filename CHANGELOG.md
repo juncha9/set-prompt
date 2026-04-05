@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.3.0] - 2026-04-06
+
+### Added
+- Antigravity integration (`link antigravity`) — symlinks `skills/` into `~/.gemini/antigravity/skills/` with backup/restore
+- `unlinkClaudeCode`, `unlinkRooCode`, `unlinkOpenclaw`, `unlinkAntigravity` — unlink functions with force mode
+- `link` command interactive mode now supports **deselection** — unchecking a linked agent triggers unlink + backup restore
+- `uninstall` delegates to `unlinkXxx(true)` instead of inlining rollback logic
+
+### Changed
+- `uninstall` no longer contains rollback logic — all agent cleanup goes through `link-command.ts`
+- `AntigravityConfig` schema updated to include `backup_path` (consistent with RooCode/OpenClaw)
+- `AGENT_PROMPT_DIRS[ANTIGRAVITY]` set to `['skills']` only
+- `scaffold` always overwrites `SET_PROMPT_GUIDE.md` — ensures the latest template on every run
+- `SET_PROMPT_GUIDE.md` template updated: Antigravity frontmatter added, OpenClaw `homepage`/`user-invocable` fields added, `metadata` format corrected
+- `build` script now runs `rimraf dist` before `tsup`
+- README workflow restructured into 4 explicit steps
+
+---
+
 ## [0.2.1] - 2026-04-02
 
 ### Changed

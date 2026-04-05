@@ -20,6 +20,7 @@ export const CodexConfigSchema = z.object({
 
 export const AntigravityConfigSchema = z.object({
     path: z.string().nullable(),
+    backup_path: z.string().nullish().optional(),
 });
 
 export const GlobalConfigSchema = z.object({

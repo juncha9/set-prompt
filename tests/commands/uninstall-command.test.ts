@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { vol } from 'memfs';
 import path from 'path';
-import os from 'os';
-import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR } from '@/_defs';
+import { HOME_DIR, CONFIG_PATH } from '@/_defs';
 
 vi.mock('fs', async () => {
     const { fs } = await import('memfs');
@@ -11,51 +10,56 @@ vi.mock('fs', async () => {
 
 vi.mock('@inquirer/prompts', () => ({ confirm: vi.fn() }));
 
+vi.mock('@/commands/link-command', () => ({
+    unlinkClaudeCode:  vi.fn(),
+    unlinkRooCode:     vi.fn(),
+    unlinkOpenclaw:    vi.fn(),
+    unlinkAntigravity: vi.fn(),
+}));
+
 vi.mock('@/_libs/config', () => ({
     configManager: {
-        repo_path: null,
-        roocode: null,
-        openclaw: null,
         save: vi.fn(),
-        isClaudeCodeEnabled: vi.fn().mockReturnValue(false),
-        isRooCodeEnabled: vi.fn().mockReturnValue(false),
-        isOpenclawEnabled: vi.fn().mockReturnValue(false),
-    }
+        isClaudeCodeEnabled:  vi.fn().mockReturnValue(false),
+        isRooCodeEnabled:     vi.fn().mockReturnValue(false),
+        isOpenclawEnabled:    vi.fn().mockReturnValue(false),
+        isAntigravityEnabled: vi.fn().mockReturnValue(false),
+    },
 }));
 
 const { uninstallCommand } = await import('@/commands/uninstall-command');
 const { confirm } = await import('@inquirer/prompts');
 const { configManager } = await import('@/_libs/config');
+const { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity } =
+    await import('@/commands/link-command');
 
 describe('uninstallCommand', () => {
     beforeEach(() => {
         vol.reset();
         vi.clearAllMocks();
-        configManager.repo_path = null;
-        configManager.roocode = null;
-        configManager.openclaw = null;
         vi.mocked(configManager.isClaudeCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(false);
     });
 
     it('제거할 항목 없음 → "Nothing to remove." 출력', async () => {
-        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
         await uninstallCommand();
 
-        const output = consoleSpy.mock.calls.flat().join('\n');
-        expect(output).toContain('Nothing to remove');
-        consoleSpy.mockRestore();
+        expect(spy.mock.calls.flat().join('\n')).toContain('Nothing to remove');
+        spy.mockRestore();
     });
 
-    it('사용자 취소 → 파일 미제거', async () => {
+    it('사용자 취소 → HOME_DIR 유지, unlink 미호출', async () => {
         vol.mkdirSync(HOME_DIR, { recursive: true });
         vi.mocked(confirm).mockResolvedValue(false);
 
         await uninstallCommand();
 
         expect(vol.existsSync(HOME_DIR)).toBe(true);
+        expect(unlinkClaudeCode).not.toHaveBeenCalled();
     });
 
     it('사용자 확인 → HOME_DIR 제거', async () => {
@@ -77,104 +81,50 @@ describe('uninstallCommand', () => {
         expect(vol.existsSync(CONFIG_PATH)).toBe(false);
     });
 
-    it('claude_code 링크됨 → settings.json에서 set-prompt 항목 제거', async () => {
+    it('claude_code 링크됨 → unlinkClaudeCode(true) 호출', async () => {
         vi.mocked(configManager.isClaudeCodeEnabled).mockReturnValue(true);
         vi.mocked(confirm).mockResolvedValue(true);
 
-        const claudeSettingsPath = path.join(os.homedir(), '.claude', 'settings.json');
-        vol.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
-        vol.writeFileSync(claudeSettingsPath, JSON.stringify({
-            extraKnownMarketplaces: {
-                'set-prompt': { source: { source: 'directory', path: CLAUDE_CODE_DIR } }
-            },
-            enabledPlugins: {
-                'set-prompt@set-prompt': true
-            }
-        }));
-
         await uninstallCommand();
 
-        const raw = vol.readFileSync(claudeSettingsPath, 'utf-8') as string;
-        const settings = JSON.parse(raw);
-        expect(settings.extraKnownMarketplaces?.['set-prompt']).toBeUndefined();
-        expect(settings.enabledPlugins?.['set-prompt@set-prompt']).toBeUndefined();
+        expect(unlinkClaudeCode).toHaveBeenCalledWith(true);
     });
 
-    it('roocode 링크됨 → ROO_DIR 심볼릭 링크 제거', async () => {
+    it('roocode 링크됨 → unlinkRooCode(true) 호출', async () => {
         vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(true);
         vi.mocked(confirm).mockResolvedValue(true);
-        configManager.roocode = { path: ROO_DIR, backup_path: null };
-
-        vol.mkdirSync(ROO_DIR, { recursive: true });
-        const fakeTarget = '/fake/repo/skills';
-        vol.mkdirSync(fakeTarget, { recursive: true });
-        vol.symlinkSync(fakeTarget, path.join(ROO_DIR, 'skills'));
 
         await uninstallCommand();
 
-        expect(vol.existsSync(path.join(ROO_DIR, 'skills'))).toBe(false);
+        expect(unlinkRooCode).toHaveBeenCalledWith(true);
     });
 
-    it('roocode 백업 존재 → 복원', async () => {
-        vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-        configManager.roocode = { path: ROO_DIR, backup_path: ROO_BACKUP_DIR };
-
-        vol.mkdirSync(ROO_DIR, { recursive: true });
-        vol.mkdirSync(path.join(ROO_BACKUP_DIR, 'skills'), { recursive: true });
-        vol.writeFileSync(path.join(ROO_BACKUP_DIR, 'skills', 'original.md'), 'backup content');
-
-        const fakeTarget = '/fake/repo/skills';
-        vol.mkdirSync(fakeTarget, { recursive: true });
-        vol.symlinkSync(fakeTarget, path.join(ROO_DIR, 'skills'));
-
-        await uninstallCommand();
-
-        expect(vol.existsSync(path.join(ROO_DIR, 'skills', 'original.md'))).toBe(true);
-    });
-
-    it('openclaw 링크됨 → OPENCLAW_DIR 심볼릭 링크 제거', async () => {
+    it('openclaw 링크됨 → unlinkOpenclaw(true) 호출', async () => {
         vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(true);
         vi.mocked(confirm).mockResolvedValue(true);
-        configManager.openclaw = { path: OPENCLAW_DIR, backup_path: null };
-
-        vol.mkdirSync(OPENCLAW_DIR, { recursive: true });
-        const fakeTarget = '/fake/repo/skills';
-        vol.mkdirSync(fakeTarget, { recursive: true });
-        vol.symlinkSync(fakeTarget, path.join(OPENCLAW_DIR, 'skills'));
 
         await uninstallCommand();
 
-        expect(vol.existsSync(path.join(OPENCLAW_DIR, 'skills'))).toBe(false);
+        expect(unlinkOpenclaw).toHaveBeenCalledWith(true);
     });
 
-    it('openclaw 백업 존재 → 복원', async () => {
-        vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(true);
+    it('antigravity 링크됨 → unlinkAntigravity(true) 호출', async () => {
+        vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(true);
         vi.mocked(confirm).mockResolvedValue(true);
-        configManager.openclaw = { path: OPENCLAW_DIR, backup_path: OPENCLAW_BACKUP_DIR };
-
-        vol.mkdirSync(OPENCLAW_DIR, { recursive: true });
-        vol.mkdirSync(path.join(OPENCLAW_BACKUP_DIR, 'skills'), { recursive: true });
-        vol.writeFileSync(path.join(OPENCLAW_BACKUP_DIR, 'skills', 'original.md'), 'backup content');
-
-        const fakeTarget = '/fake/repo/skills';
-        vol.mkdirSync(fakeTarget, { recursive: true });
-        vol.symlinkSync(fakeTarget, path.join(OPENCLAW_DIR, 'skills'));
 
         await uninstallCommand();
 
-        expect(vol.existsSync(path.join(OPENCLAW_DIR, 'skills', 'original.md'))).toBe(true);
+        expect(unlinkAntigravity).toHaveBeenCalledWith(true);
     });
 
     it('성공 시 "Uninstalled." 출력', async () => {
         vol.mkdirSync(HOME_DIR, { recursive: true });
         vi.mocked(confirm).mockResolvedValue(true);
-        const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
         await uninstallCommand();
 
-        const output = consoleSpy.mock.calls.flat().join('\n');
-        expect(output).toContain('Uninstalled');
-        consoleSpy.mockRestore();
+        expect(spy.mock.calls.flat().join('\n')).toContain('Uninstalled');
+        spy.mockRestore();
     });
 });

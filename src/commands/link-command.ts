@@ -4,7 +4,7 @@ import os from 'os';
 import chalk from 'chalk';
 import { confirm, checkbox } from '@inquirer/prompts';
 import { pathExists } from 'fs-extra';
-import { CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR, AGENT_PROMPT_DIRS, ALL_AGENTS, TOOLS } from '@/_defs';
+import { CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR, ANTIGRAVITY_DIR, ANTIGRAVITY_BACKUP_DIR, AGENT_PROMPT_DIRS, ALL_AGENTS, TOOLS } from '@/_defs';
 import { configManager } from '@/_libs/config';
 
 const resolveRepoPath = (): string | null => {
@@ -346,48 +346,299 @@ export const linkCodex = async (): Promise<void> => {
     console.log(chalk.yellow('Codex integration is not yet implemented.'));
 };
 
+// ─── Unlink ──────────────────────────────────────────────────────────────────
+
+export const unlinkClaudeCode = async (force = false): Promise<void> => {
+    if (!force) {
+        const ok = await confirm({
+            message: `Remove Claude Code plugin dir (${CLAUDE_CODE_DIR}) and settings entries?`,
+            default: false,
+        });
+        if (!ok) { console.log(chalk.yellow('Cancelled.')); return; }
+    }
+
+    const claudeSettingsPath = path.join(os.homedir(), '.claude', 'settings.json');
+    if (fs.existsSync(claudeSettingsPath)) {
+        try {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const backupPath = `${claudeSettingsPath}.bak.${timestamp}`;
+            fs.copyFileSync(claudeSettingsPath, backupPath);
+
+            const settings = JSON.parse(fs.readFileSync(claudeSettingsPath, 'utf-8'));
+            if (settings?.extraKnownMarketplaces?.[PLUGIN_NAME] !== undefined) {
+                delete settings.extraKnownMarketplaces[PLUGIN_NAME];
+            }
+            if (settings?.enabledPlugins?.[`${PLUGIN_NAME}@${PLUGIN_NAME}`] !== undefined) {
+                delete settings.enabledPlugins[`${PLUGIN_NAME}@${PLUGIN_NAME}`];
+            }
+
+            try {
+                fs.writeFileSync(claudeSettingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+                fs.unlinkSync(backupPath);
+                console.log(chalk.dim(`  removed set-prompt entries from: ${claudeSettingsPath}`));
+            } catch (ex: any) {
+                fs.copyFileSync(backupPath, claudeSettingsPath);
+                fs.unlinkSync(backupPath);
+                console.warn(chalk.yellow('  ⚠ Write failed — rolled back to original.'));
+            }
+        } catch (ex: any) {
+            console.error(chalk.red(`  ❌ Failed to clean up settings.json: ${ex.message}`));
+        }
+    }
+
+    if (fs.existsSync(CLAUDE_CODE_DIR)) {
+        fs.rmSync(CLAUDE_CODE_DIR, { recursive: true, force: true });
+        console.log(chalk.dim(`  removed: ${CLAUDE_CODE_DIR}`));
+    }
+
+    configManager.claude_code = null;
+    configManager.save();
+};
+
+export const unlinkRooCode = async (force = false): Promise<void> => {
+    if (!force) {
+        const ok = await confirm({
+            message: `Remove RooCode symlinks from ${ROO_DIR}?`,
+            default: false,
+        });
+        if (!ok) { console.log(chalk.yellow('Cancelled.')); return; }
+    }
+
+    const backupPath = configManager.roocode?.backup_path ?? ROO_BACKUP_DIR;
+
+    for (const dir of AGENT_PROMPT_DIRS[TOOLS.ROOCODE]) {
+        const target = path.join(ROO_DIR, dir);
+        if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink()) {
+            fs.unlinkSync(target);
+            console.log(chalk.dim(`  removed symlink: ${target}`));
+        }
+    }
+
+    if (fs.existsSync(backupPath)) {
+        try {
+            for (const dir of AGENT_PROMPT_DIRS[TOOLS.ROOCODE]) {
+                const src = path.join(backupPath, dir);
+                const dest = path.join(ROO_DIR, dir);
+                if (!fs.existsSync(src)) { continue; }
+                fs.renameSync(src, dest);
+                console.log(chalk.dim(`  restored: ${dir}/`));
+            }
+            fs.rmdirSync(backupPath);
+        } catch (ex: any) {
+            console.error(chalk.red(`  ❌ Failed to restore RooCode backup: ${ex.message}`));
+        }
+    }
+
+    configManager.roocode = null;
+    configManager.save();
+};
+
+export const unlinkOpenclaw = async (force = false): Promise<void> => {
+    if (!force) {
+        const ok = await confirm({
+            message: `Remove OpenClaw symlinks from ${OPENCLAW_DIR}?`,
+            default: false,
+        });
+        if (!ok) { console.log(chalk.yellow('Cancelled.')); return; }
+    }
+
+    const backupPath = configManager.openclaw?.backup_path ?? OPENCLAW_BACKUP_DIR;
+
+    for (const dir of AGENT_PROMPT_DIRS[TOOLS.OPENCLAW]) {
+        const target = path.join(OPENCLAW_DIR, dir);
+        if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink()) {
+            fs.unlinkSync(target);
+            console.log(chalk.dim(`  removed symlink: ${target}`));
+        }
+    }
+
+    if (fs.existsSync(backupPath)) {
+        try {
+            for (const dir of AGENT_PROMPT_DIRS[TOOLS.OPENCLAW]) {
+                const src = path.join(backupPath, dir);
+                const dest = path.join(OPENCLAW_DIR, dir);
+                if (!fs.existsSync(src)) { continue; }
+                fs.renameSync(src, dest);
+                console.log(chalk.dim(`  restored: ${dir}/`));
+            }
+            fs.rmdirSync(backupPath);
+        } catch (ex: any) {
+            console.error(chalk.red(`  ❌ Failed to restore OpenClaw backup: ${ex.message}`));
+        }
+    }
+
+    configManager.openclaw = null;
+    configManager.save();
+};
+
+export const unlinkAntigravity = async (force = false): Promise<void> => {
+    if (!force) {
+        const ok = await confirm({
+            message: `Remove Antigravity symlinks from ${ANTIGRAVITY_DIR}?`,
+            default: false,
+        });
+        if (!ok) { console.log(chalk.yellow('Cancelled.')); return; }
+    }
+
+    const backupPath = configManager.antigravity?.backup_path ?? ANTIGRAVITY_BACKUP_DIR;
+
+    for (const dir of AGENT_PROMPT_DIRS[TOOLS.ANTIGRAVITY]) {
+        const target = path.join(ANTIGRAVITY_DIR, dir);
+        if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink()) {
+            fs.unlinkSync(target);
+            console.log(chalk.dim(`  removed symlink: ${target}`));
+        }
+    }
+
+    if (fs.existsSync(backupPath)) {
+        try {
+            for (const dir of AGENT_PROMPT_DIRS[TOOLS.ANTIGRAVITY]) {
+                const src = path.join(backupPath, dir);
+                const dest = path.join(ANTIGRAVITY_DIR, dir);
+                if (!fs.existsSync(src)) { continue; }
+                fs.renameSync(src, dest);
+                console.log(chalk.dim(`  restored: ${dir}/`));
+            }
+            fs.rmdirSync(backupPath);
+        } catch (ex: any) {
+            console.error(chalk.red(`  ❌ Failed to restore Antigravity backup: ${ex.message}`));
+        }
+    }
+
+    configManager.antigravity = null;
+    configManager.save();
+};
+
 export const linkAntigravity = async (): Promise<void> => {
-    if (resolveRepoPath() == null) { return; }
-    console.log(chalk.yellow('Antigravity integration is not yet implemented.'));
+    const repoPath = resolveRepoPath();
+    if (repoPath == null) { return; }
+
+    console.log(chalk.green(`\nSetting up Antigravity integration...`));
+    console.log(chalk.dim(ANTIGRAVITY_DIR));
+
+    const antigravityDirs = AGENT_PROMPT_DIRS[TOOLS.ANTIGRAVITY];
+
+    const backupExistingAntigravityFiles = async (): Promise<boolean> => {
+        try {
+            fs.mkdirSync(ANTIGRAVITY_DIR, { recursive: true });
+
+            const dirsToBackup: string[] = [];
+            for (const dir of antigravityDirs) {
+                const target = path.join(ANTIGRAVITY_DIR, dir);
+                if (fs.existsSync(target) && fs.lstatSync(target).isSymbolicLink() === false) {
+                    dirsToBackup.push(dir);
+                }
+            }
+
+            if (dirsToBackup.length === 0) {
+                return true;
+            }
+
+            fs.mkdirSync(ANTIGRAVITY_BACKUP_DIR, { recursive: true });
+            for (const dir of dirsToBackup) {
+                const src = path.join(ANTIGRAVITY_DIR, dir);
+                const dest = path.join(ANTIGRAVITY_BACKUP_DIR, dir);
+                fs.renameSync(src, dest);
+                console.log(chalk.dim(`  backed up: ${dir}/ → ${dest}`));
+            }
+
+            return true;
+        } catch (ex: any) {
+            console.error(chalk.red(`❌ Failed to backup existing directories: ${ex.message}`));
+            return false;
+        }
+    };
+
+    const setAntigravityAssets = async (): Promise<boolean> => {
+        try {
+            const linked: { dir: string; src: string }[] = [];
+
+            for (const dir of antigravityDirs) {
+                const src = path.join(repoPath, dir);
+                const dest = path.join(ANTIGRAVITY_DIR, dir);
+
+                if ((await pathExists(src)) === false) { continue; }
+
+                if (fs.existsSync(dest)) {
+                    fs.rmSync(dest, { recursive: true, force: true });
+                }
+
+                const symlinkType = process.platform === 'win32' ? 'junction' : 'dir';
+                fs.symlinkSync(src, dest, symlinkType);
+                linked.push({ dir, src });
+            }
+
+            for (const { dir, src } of linked) {
+                const isLast = linked[linked.length - 1].dir === dir;
+                const branch = isLast ? '└──' : '├──';
+                console.log(chalk.dim(`  ${branch} `) + chalk.bold(`${dir}/`) + chalk.dim(` → ${src}`) + chalk.green(' ✓'));
+            }
+
+            return true;
+        } catch (ex: any) {
+            console.error(chalk.red(`❌ Failed to create symlinks: ${ex.message}`));
+            return false;
+        }
+    };
+
+    const backupOk = await backupExistingAntigravityFiles();
+    if (backupOk === false) { return; }
+
+    const linkOk = await setAntigravityAssets();
+    if (linkOk === false) { return; }
+
+    configManager.antigravity = { path: ANTIGRAVITY_DIR, backup_path: ANTIGRAVITY_BACKUP_DIR };
+    configManager.save();
 };
 
 export const linkCommand = async (tool?: string): Promise<void> => {
     if (tool != null) {
         const known = ALL_AGENTS.some(a => a.value === tool);
-        if (known === false) {
+        if (!known) {
             console.log(chalk.red(`Unknown vendor: ${tool}`));
             process.exit(1);
         }
         if (tool === TOOLS.CLAUDECODE)        { await linkClaudeCode(); }
-        else if (tool === TOOLS.ROOCODE)       { await linkRooCode(); }
-        else if (tool === TOOLS.OPENCLAW)      { await linkOpenclaw(); }
-        else if (tool === TOOLS.CODEX)         { await linkCodex(); }
-        else if (tool === TOOLS.ANTIGRAVITY)   { await linkAntigravity(); }
+        else if (tool === TOOLS.ROOCODE)      { await linkRooCode(); }
+        else if (tool === TOOLS.OPENCLAW)     { await linkOpenclaw(); }
+        else if (tool === TOOLS.CODEX)        { await linkCodex(); }
+        else if (tool === TOOLS.ANTIGRAVITY)  { await linkAntigravity(); }
         return;
     }
 
+    const prevLinked: Record<string, boolean> = {
+        [TOOLS.CLAUDECODE]:  configManager.isClaudeCodeEnabled(),
+        [TOOLS.ROOCODE]:     configManager.isRooCodeEnabled(),
+        [TOOLS.OPENCLAW]:    configManager.isOpenclawEnabled(),
+        [TOOLS.CODEX]:       configManager.isCodexEnabled(),
+        [TOOLS.ANTIGRAVITY]: configManager.isAntigravityEnabled(),
+    };
+
     const selected = await checkbox({
         message: 'Which AI agent do you want to integrate?',
-        choices: ALL_AGENTS.map(a => {
-            const applied =
-                a.value === TOOLS.CLAUDECODE  ? configManager.isClaudeCodeEnabled() :
-                a.value === TOOLS.ROOCODE      ? configManager.isRooCodeEnabled() :
-                a.value === TOOLS.OPENCLAW     ? configManager.isOpenclawEnabled() :
-                a.value === TOOLS.CODEX        ? configManager.isCodexEnabled() :
-                a.value === TOOLS.ANTIGRAVITY  ? configManager.isAntigravityEnabled() : false;
-            return {
-                name: applied ? `${a.name} ${chalk.dim('(applied)')}` : a.name,
-                value: a.value,
-                checked: applied,
-            };
-        }),
+        choices: ALL_AGENTS.map(a => ({
+            name: prevLinked[a.value] ? `${a.name} ${chalk.dim('(applied)')}` : a.name,
+            value: a.value,
+            checked: prevLinked[a.value],
+        })),
     });
 
-    for (const a of selected) {
-        if (a === TOOLS.CLAUDECODE)        { await linkClaudeCode(); }
-        else if (a === TOOLS.ROOCODE)       { await linkRooCode(); }
-        else if (a === TOOLS.OPENCLAW)      { await linkOpenclaw(); }
-        else if (a === TOOLS.CODEX)         { await linkCodex(); }
-        else if (a === TOOLS.ANTIGRAVITY)   { await linkAntigravity(); }
+    for (const a of ALL_AGENTS) {
+        const was = prevLinked[a.value];
+        const now = selected.includes(a.value);
+
+        if (!was && now) {
+            if (a.value === TOOLS.CLAUDECODE)        { await linkClaudeCode(); }
+            else if (a.value === TOOLS.ROOCODE)      { await linkRooCode(); }
+            else if (a.value === TOOLS.OPENCLAW)     { await linkOpenclaw(); }
+            else if (a.value === TOOLS.CODEX)        { await linkCodex(); }
+            else if (a.value === TOOLS.ANTIGRAVITY)  { await linkAntigravity(); }
+        }
+        if (was && !now) {
+            if (a.value === TOOLS.CLAUDECODE)        { await unlinkClaudeCode(true); }
+            else if (a.value === TOOLS.ROOCODE)      { await unlinkRooCode(true); }
+            else if (a.value === TOOLS.OPENCLAW)     { await unlinkOpenclaw(true); }
+            else if (a.value === TOOLS.ANTIGRAVITY)  { await unlinkAntigravity(true); }
+        }
     }
 };
