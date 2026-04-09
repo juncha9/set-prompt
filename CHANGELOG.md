@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.4.0] - 2026-04-10
+
+### Added
+- Cursor integration (`link cursor`) — creates plugin structure at `~/.cursor/` with backup/restore
+- `linkCommand` now shows a Link / Unlink summary before executing; exits early when there are no changes
+- All `unlink*` functions print a colored header banner on start (consistent with `link*`)
+- Console output: `removed` → red, `restored` → green, `backed up` → yellow
+- Console output: `Config loaded` is now green (consistent with `Config saved`)
+
+### Changed
+- Claude Code plugin: `~/.claude/plugins/installed_plugins.json` is now directly patched so `installPath` points to the source plugin directory — bypasses Claude Code's cache management that was deleting the symlink on startup
+- `install`: re-installing the same URL is blocked with a `set-prompt update` hint
+- `install`: re-installing a different URL shows a "Switching repo" warning with confirmation (default: No)
+- `install`: EPERM on directory rename is handled gracefully with a descriptive error message
+- `install`: existing repo backup is automatically removed after a successful clone
+
+### Disabled
+- `link codex` is temporarily unavailable in this release (implementation preserved, re-enable in next release)
+
+---
+
 ## [0.3.0] - 2026-04-06
 
 ### Added

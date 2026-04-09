@@ -2,7 +2,7 @@ import fs from 'fs';
 import chalk from 'chalk';
 import { HOME_DIR, CONFIG_PATH, TAB } from '@/_defs';
 import { GlobalConfigSchema } from '@/_types';
-import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig, CodexConfig, AntigravityConfig } from '@/_types';
+import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig, CodexConfig, AntigravityConfig, CursorConfig } from '@/_types';
 export { HOME_DIR as GLOBAL_CONFIG_DIR, CONFIG_PATH as GLOBAL_CONFIG_PATH };
 
 class ConfigManager {
@@ -13,6 +13,7 @@ class ConfigManager {
     private _openclaw:     OpenclawConfig | null = null;
     private _codex:        CodexConfig | null = null;
     private _antigravity:  AntigravityConfig | null = null;
+    private _cursor:       CursorConfig | null = null;
 
     get repo_path()   { return this._repo_path; }
     get remote_url()  { return this._remote_url; }
@@ -21,6 +22,7 @@ class ConfigManager {
     get openclaw()    { return this._openclaw; }
     get codex()       { return this._codex; }
     get antigravity() { return this._antigravity; }
+    get cursor()      { return this._cursor; }
 
     set repo_path(v: string | null)              { this._repo_path    = v; }
     set remote_url(v: string | null)             { this._remote_url   = v; }
@@ -29,12 +31,13 @@ class ConfigManager {
     set openclaw(v: OpenclawConfig | null)       { this._openclaw     = v; }
     set codex(v: CodexConfig | null)             { this._codex        = v; }
     set antigravity(v: AntigravityConfig | null) { this._antigravity  = v; }
+    set cursor(v: CursorConfig | null)           { this._cursor       = v; }
 
     init(): void {
         this._loadFromDisk();
 
         if (this._repo_path != null) {
-            console.log(chalk.dim(`Config loaded from ${CONFIG_PATH}`));
+            console.log(chalk.green(`Config loaded`) + chalk.dim(` from ${CONFIG_PATH}`));
         }
     }
 
@@ -53,6 +56,7 @@ class ConfigManager {
                 openclaw:    this._openclaw,
                 codex:       this._codex,
                 antigravity: this._antigravity,
+                cursor:      this._cursor,
             }, null, 4);
             fs.writeFileSync(CONFIG_PATH, configStr, 'utf-8');
 
@@ -81,6 +85,7 @@ class ConfigManager {
     isOpenclawEnabled(): boolean    { return this._openclaw     != null; }
     isCodexEnabled(): boolean       { return this._codex        != null; }
     isAntigravityEnabled(): boolean { return this._antigravity  != null; }
+    isCursorEnabled(): boolean      { return this._cursor       != null; }
 
     private _assign(config: GlobalConfig): void {
         this._repo_path   = config.repo_path;
@@ -90,6 +95,7 @@ class ConfigManager {
         this._openclaw    = config.openclaw;
         this._codex       = config.codex ?? null;
         this._antigravity = config.antigravity ?? null;
+        this._cursor      = config.cursor ?? null;
     }
 
     private _loadFromDisk(): void {
@@ -121,6 +127,7 @@ export const getConfig = (): GlobalConfig | null => {
         openclaw:    configManager.openclaw,
         codex:       configManager.codex,
         antigravity: configManager.antigravity,
+        cursor:      configManager.cursor,
     };
 };
 export const setConfig = (config: GlobalConfig): boolean => {
@@ -131,6 +138,7 @@ export const setConfig = (config: GlobalConfig): boolean => {
     configManager.openclaw    = config.openclaw;
     configManager.codex       = config.codex ?? null;
     configManager.antigravity = config.antigravity ?? null;
+    configManager.cursor      = config.cursor ?? null;
     return configManager.save();
 };
 export const isConfigExists = (): boolean => configManager.exists();

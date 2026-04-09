@@ -1,16 +1,16 @@
 {
     "name": "set-prompt",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "Sync your prompt library across AI coding tools from a single git repo",
     "main": "dist/index.js",
     "bin": {
-        "set-prompt": "./dist/index.js"
+        "set-prompt": "./dist/index.js",
+        "sppt": "./dist/index.js"
     },
     "type": "module",
     "scripts": {
         "start:dev": "tsx src/index.ts",
-        "build": "rimraf dist && tsup && npm run copy_bin",
-        "copy_bin": "cpx \"src/bin/set-prompt.js\" dist/bin",
+        "build": "rimraf dist && tsup",
         "test": "vitest --reporter=verbose"
     },
     "keywords": [
@@ -46,7 +46,6 @@
         "@types/fs-extra": "^11.0.4",
         "@types/node": "^25.4.0",
         "@vitest/coverage-v8": "^4.1.0",
-        "cpx": "^1.5.0",
         "memfs": "^4.56.11",
         "prettier": "^3.8.1",
         "rimraf": "^6.1.3",

@@ -15,6 +15,8 @@ vi.mock('@/commands/link-command', () => ({
     unlinkRooCode:     vi.fn(),
     unlinkOpenclaw:    vi.fn(),
     unlinkAntigravity: vi.fn(),
+    unlinkCodex:       vi.fn(),
+    unlinkCursor:      vi.fn(),
 }));
 
 vi.mock('@/_libs/config', () => ({
@@ -24,13 +26,15 @@ vi.mock('@/_libs/config', () => ({
         isRooCodeEnabled:     vi.fn().mockReturnValue(false),
         isOpenclawEnabled:    vi.fn().mockReturnValue(false),
         isAntigravityEnabled: vi.fn().mockReturnValue(false),
+        isCodexEnabled:       vi.fn().mockReturnValue(false),
+        isCursorEnabled:      vi.fn().mockReturnValue(false),
     },
 }));
 
 const { uninstallCommand } = await import('@/commands/uninstall-command');
 const { confirm } = await import('@inquirer/prompts');
 const { configManager } = await import('@/_libs/config');
-const { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity } =
+const { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity, unlinkCodex, unlinkCursor } =
     await import('@/commands/link-command');
 
 describe('uninstallCommand', () => {
@@ -41,6 +45,8 @@ describe('uninstallCommand', () => {
         vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(false);
         vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isCodexEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isCursorEnabled).mockReturnValue(false);
     });
 
     it('제거할 항목 없음 → "Nothing to remove." 출력', async () => {
@@ -115,6 +121,24 @@ describe('uninstallCommand', () => {
         await uninstallCommand();
 
         expect(unlinkAntigravity).toHaveBeenCalledWith(true);
+    });
+
+    it('codex 링크됨 → unlinkCodex(true) 호출', async () => {
+        vi.mocked(configManager.isCodexEnabled).mockReturnValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        await uninstallCommand();
+
+        expect(unlinkCodex).toHaveBeenCalledWith(true);
+    });
+
+    it('cursor 링크됨 → unlinkCursor(true) 호출', async () => {
+        vi.mocked(configManager.isCursorEnabled).mockReturnValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        await uninstallCommand();
+
+        expect(unlinkCursor).toHaveBeenCalledWith(true);
     });
 
     it('성공 시 "Uninstalled." 출력', async () => {

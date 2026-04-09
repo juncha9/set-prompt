@@ -25,15 +25,31 @@ const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
 
 describe('installCommand', () => {
     let tmpDir: string;
+    let existsSyncSpy: ReturnType<typeof vi.spyOn>;
+    let renameSyncSpy: ReturnType<typeof vi.spyOn>;
+    let mkdirSyncSpy: ReturnType<typeof vi.spyOn>;
+    let rmSyncSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'set-prompt-test-'));
         vi.clearAllMocks();
         vi.mocked(configManager.save).mockReturnValue(true);
         exitSpy.mockClear();
+        configManager.repo_path = null;
+        configManager.remote_url = null;
+
+        // 실제 파일시스템 조작 방지
+        existsSyncSpy = vi.spyOn(fs, 'existsSync').mockReturnValue(false);
+        renameSyncSpy = vi.spyOn(fs, 'renameSync').mockReturnValue(undefined);
+        mkdirSyncSpy  = vi.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
+        rmSyncSpy     = vi.spyOn(fs, 'rmSync').mockReturnValue(undefined);
     });
 
     afterEach(() => {
+        existsSyncSpy.mockRestore();
+        renameSyncSpy.mockRestore();
+        mkdirSyncSpy.mockRestore();
+        rmSyncSpy.mockRestore();
         fs.rmSync(tmpDir, { recursive: true, force: true });
     });
 
@@ -93,6 +109,79 @@ describe('installCommand', () => {
 
         await expect(installCommand('https://github.com/foo/bar.git')).rejects.toThrow('process.exit called');
         expect(exitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('같은 URL로 재install → 차단', async () => {
+        configManager.repo_path = '/some/path';
+        configManager.remote_url = 'https://github.com/foo/bar.git';
+
+        const result = await installCommand('https://github.com/foo/bar.git');
+
+        expect(result).toBe(false);
+        expect(confirm).not.toHaveBeenCalled();
+        expect(spawnSync).not.toHaveBeenCalled();
+    });
+
+    it('.git 유무 차이 무시 → 같은 URL로 차단', async () => {
+        configManager.repo_path = '/some/path';
+        configManager.remote_url = 'https://github.com/foo/bar.git';
+
+        const result = await installCommand('https://github.com/foo/bar');
+
+        expect(result).toBe(false);
+        expect(spawnSync).not.toHaveBeenCalled();
+    });
+
+    it('다른 URL로 재install → replace 확인 프롬프트', async () => {
+        configManager.repo_path = '/some/path';
+        configManager.remote_url = 'https://github.com/foo/old.git';
+        vi.mocked(confirm).mockResolvedValue(false);
+
+        await installCommand('https://github.com/foo/new.git');
+
+        expect(confirm).toHaveBeenCalled();
+        expect(spawnSync).not.toHaveBeenCalled();
+    });
+
+    it('다른 URL로 재install → 확인 시 clone 실행', async () => {
+        configManager.repo_path = '/some/path';
+        configManager.remote_url = 'https://github.com/foo/old.git';
+        vi.mocked(confirm).mockResolvedValue(true);
+        vi.mocked(spawnSync).mockReturnValue({ status: 0 } as any);
+
+        await installCommand('https://github.com/foo/new.git');
+
+        expect(spawnSync).toHaveBeenCalledWith(
+            'git',
+            expect.arrayContaining(['clone', 'https://github.com/foo/new.git']),
+            expect.anything()
+        );
+    });
+
+    it('기존 repo 존재 시 백업 후 clone 성공 → 백업 삭제', async () => {
+        existsSyncSpy.mockReturnValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
+        vi.mocked(spawnSync).mockReturnValue({ status: 0 } as any);
+
+        await installCommand('https://github.com/foo/bar.git');
+
+        expect(renameSyncSpy).toHaveBeenCalled();
+        expect(rmSyncSpy).toHaveBeenCalled();
+    });
+
+    it('기존 repo rename 시 EPERM → false 반환, clone 미실행', async () => {
+        existsSyncSpy.mockReturnValue(true);
+        renameSyncSpy.mockImplementation(() => {
+            const err = new Error('EPERM') as NodeJS.ErrnoException;
+            err.code = 'EPERM';
+            throw err;
+        });
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        const result = await installCommand('https://github.com/foo/bar.git');
+
+        expect(result).toBe(false);
+        expect(spawnSync).not.toHaveBeenCalled();
     });
 
     it('ssh git URL 인식 → clone 호출', async () => {

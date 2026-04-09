@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { confirm } from '@inquirer/prompts';
 import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR } from '@/_defs';
 import { configManager } from '@/_libs/config';
-import { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity } from '@/commands/link-command';
+import { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity, unlinkCodex, unlinkCursor } from '@/commands/link-command';
 
 export const uninstallCommand = async (): Promise<void> => {
     const targets = [
@@ -15,8 +15,10 @@ export const uninstallCommand = async (): Promise<void> => {
     const hasRooCode     = configManager.isRooCodeEnabled();
     const hasOpenclaw    = configManager.isOpenclawEnabled();
     const hasAntigravity = configManager.isAntigravityEnabled();
+    const hasCodex       = configManager.isCodexEnabled();
+    const hasCursor      = configManager.isCursorEnabled();
 
-    if (targets.length === 0 && !hasClaudeCode && !hasRooCode && !hasOpenclaw && !hasAntigravity) {
+    if (targets.length === 0 && !hasClaudeCode && !hasRooCode && !hasOpenclaw && !hasAntigravity && !hasCodex && !hasCursor) {
         console.log(chalk.yellow('Nothing to remove.'));
         return;
     }
@@ -27,6 +29,8 @@ export const uninstallCommand = async (): Promise<void> => {
     if (hasRooCode)     { console.log(`  RooCode symlinks ${chalk.dim('(backup will be restored)')}`); }
     if (hasOpenclaw)    { console.log(`  OpenClaw symlinks ${chalk.dim('(backup will be restored)')}`); }
     if (hasAntigravity) { console.log(`  Antigravity symlinks ${chalk.dim('(backup will be restored)')}`); }
+    if (hasCodex)       { console.log(`  Codex symlinks ${chalk.dim('(backup will be restored)')}`); }
+    if (hasCursor)      { console.log(`  Cursor plugin dir ${chalk.dim('(symlink will be removed)')}`); }
 
     const ok = await confirm({ message: 'Proceed?', default: false });
     if (!ok) {
@@ -38,6 +42,8 @@ export const uninstallCommand = async (): Promise<void> => {
     if (hasRooCode)     { await unlinkRooCode(true); }
     if (hasOpenclaw)    { await unlinkOpenclaw(true); }
     if (hasAntigravity) { await unlinkAntigravity(true); }
+    if (hasCodex)       { await unlinkCodex(true); }
+    if (hasCursor)      { await unlinkCursor(true); }
 
     for (const t of targets) {
         fs.rmSync(t.path, { recursive: true, force: true });

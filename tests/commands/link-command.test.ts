@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { vol } from 'memfs';
 import path from 'path';
 import os from 'os';
-import { CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR, ANTIGRAVITY_DIR, ANTIGRAVITY_BACKUP_DIR } from '@/_defs';
+import { CLAUDE_CODE_DIR, ROO_DIR, ROO_BACKUP_DIR, OPENCLAW_DIR, OPENCLAW_BACKUP_DIR, ANTIGRAVITY_DIR, ANTIGRAVITY_BACKUP_DIR, CODEX_DIR, CODEX_BACKUP_DIR, CURSOR_DIR, CURSOR_PLUGIN_DIR } from '@/_defs';
 
 vi.mock('fs', async () => {
     const { fs } = await import('memfs');
@@ -27,18 +27,20 @@ vi.mock('@/_libs/config', () => ({
         openclaw: null,
         codex: null,
         antigravity: null,
+        cursor: null,
         save: vi.fn(),
         isClaudeCodeEnabled: vi.fn().mockReturnValue(false),
         isRooCodeEnabled: vi.fn().mockReturnValue(false),
         isOpenclawEnabled: vi.fn().mockReturnValue(false),
         isCodexEnabled: vi.fn().mockReturnValue(false),
         isAntigravityEnabled: vi.fn().mockReturnValue(false),
+        isCursorEnabled: vi.fn().mockReturnValue(false),
     }
 }));
 
 const {
-    linkClaudeCode, linkRooCode, linkOpenclaw, linkAntigravity,
-    unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity,
+    linkClaudeCode, linkRooCode, linkOpenclaw, linkAntigravity, linkCodex, linkCursor,
+    unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity, unlinkCodex, unlinkCursor,
     linkCommand,
 } = await import('@/commands/link-command');
 const { configManager } = await import('@/_libs/config');
@@ -78,7 +80,7 @@ describe('linkClaudeCode', () => {
         await linkClaudeCode();
 
         const marketplacePath = path.join(CLAUDE_CODE_DIR, '.claude-plugin', 'marketplace.json');
-        const pluginPath = path.join(CLAUDE_CODE_DIR, 'plugins', 'set-prompt', '.claude-plugin', 'plugin.json');
+        const pluginPath = path.join(CLAUDE_CODE_DIR, 'plugins', 'sppt', '.claude-plugin', 'plugin.json');
 
         expect(vol.existsSync(marketplacePath)).toBe(true);
         expect(vol.existsSync(pluginPath)).toBe(true);
@@ -93,7 +95,7 @@ describe('linkClaudeCode', () => {
 
         await linkClaudeCode();
 
-        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'set-prompt', 'skills');
+        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'sppt', 'skills');
         expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
     });
 
@@ -102,7 +104,7 @@ describe('linkClaudeCode', () => {
         configManager.repo_path = repoPath;
 
         vol.fromJSON({ [`${repoPath}/skills/test.md`]: 'test' });
-        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'set-prompt', 'skills');
+        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'sppt', 'skills');
         vol.mkdirSync(dest, { recursive: true });
 
         vi.mocked(pathExists).mockResolvedValue(true);
@@ -121,7 +123,7 @@ describe('linkClaudeCode', () => {
 
         await linkClaudeCode();
 
-        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'set-prompt', 'agents');
+        const dest = path.join(CLAUDE_CODE_DIR, 'plugins', 'sppt', 'agents');
         expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
     });
 
@@ -133,6 +135,54 @@ describe('linkClaudeCode', () => {
 
         expect(configManager.claude_code).toEqual({ path: CLAUDE_CODE_DIR });
         expect(configManager.save).toHaveBeenCalled();
+    });
+
+    it('installed_plugins.json에 sppt@set-prompt installPath가 소스 디렉토리를 가리킴', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        await linkClaudeCode();
+
+        const installedPluginsPath = path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json');
+        const data = JSON.parse(vol.readFileSync(installedPluginsPath, 'utf-8') as string);
+        const entry = data.plugins['sppt@set-prompt']?.[0];
+
+        expect(entry).toBeDefined();
+        expect(entry.installPath).toBe(path.join(CLAUDE_CODE_DIR, 'plugins', 'sppt'));
+        expect(entry.version).toBe('1.0.0');
+        expect(entry.scope).toBe('user');
+    });
+
+    it('installed_plugins.json 기존 항목은 유지하고 sppt@set-prompt만 업데이트', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        const installedPluginsPath = path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json');
+        vol.mkdirSync(path.dirname(installedPluginsPath), { recursive: true });
+        vol.writeFileSync(installedPluginsPath, JSON.stringify({
+            version: 2,
+            plugins: {
+                'atlassian@claude-plugins-official': [{ scope: 'user', installPath: '/some/path', version: 'abc123' }],
+            },
+        }), 'utf-8');
+
+        await linkClaudeCode();
+
+        const data = JSON.parse(vol.readFileSync(installedPluginsPath, 'utf-8') as string);
+        expect(data.plugins['atlassian@claude-plugins-official']).toBeDefined();
+        expect(data.plugins['sppt@set-prompt']?.[0].installPath).toBe(path.join(CLAUDE_CODE_DIR, 'plugins', 'sppt'));
+    });
+
+    it('installed_plugins.json 없어도 오류 없이 생성', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        const installedPluginsPath = path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json');
+        expect(vol.existsSync(installedPluginsPath)).toBe(false);
+
+        await linkClaudeCode();
+
+        expect(vol.existsSync(installedPluginsPath)).toBe(true);
     });
 });
 
@@ -196,6 +246,7 @@ describe('linkRooCode', () => {
         vol.writeFileSync(path.join(ROO_DIR, 'skills', 'existing.md'), 'existing');
         vol.fromJSON({ [`${repoPath}/skills/new.md`]: 'new' });
         vi.mocked(pathExists).mockResolvedValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
 
         await linkRooCode();
 
@@ -274,6 +325,7 @@ describe('linkOpenclaw', () => {
         vol.writeFileSync(path.join(OPENCLAW_DIR, 'skills', 'existing.md'), 'existing');
         vol.fromJSON({ [`${repoPath}/skills/new.md`]: 'new' });
         vi.mocked(pathExists).mockResolvedValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
 
         await linkOpenclaw();
 
@@ -352,6 +404,7 @@ describe('linkAntigravity', () => {
         vol.writeFileSync(path.join(ANTIGRAVITY_DIR, 'skills', 'existing.md'), 'existing');
         vol.fromJSON({ [`${repoPath}/skills/new.md`]: 'new' });
         vi.mocked(pathExists).mockResolvedValue(true);
+        vi.mocked(confirm).mockResolvedValue(true);
 
         await linkAntigravity();
 
@@ -421,7 +474,7 @@ describe('unlinkClaudeCode', () => {
         vol.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
         vol.writeFileSync(claudeSettingsPath, JSON.stringify({
             extraKnownMarketplaces: { 'set-prompt': {}, other: {} },
-            enabledPlugins: { 'set-prompt@set-prompt': true, other: true },
+            enabledPlugins: { 'sppt@set-prompt': true, other: true },
         }));
         vi.mocked(confirm).mockResolvedValue(true);
 
@@ -429,7 +482,7 @@ describe('unlinkClaudeCode', () => {
 
         const s = JSON.parse(vol.readFileSync(claudeSettingsPath, 'utf-8') as string);
         expect(s.extraKnownMarketplaces?.['set-prompt']).toBeUndefined();
-        expect(s.enabledPlugins?.['set-prompt@set-prompt']).toBeUndefined();
+        expect(s.enabledPlugins?.['sppt@set-prompt']).toBeUndefined();
         expect(s.extraKnownMarketplaces?.other).toBeDefined();
         expect(s.enabledPlugins?.other).toBe(true);
     });
@@ -446,6 +499,48 @@ describe('unlinkClaudeCode', () => {
 
         expect(configManager.claude_code).toBeNull();
         expect(configManager.save).toHaveBeenCalled();
+    });
+
+    it('installed_plugins.json에서 @set-prompt 항목만 제거, 나머지 보존', async () => {
+        const installedPluginsPath = path.join(os.homedir(), '.claude', 'plugins', 'installed_plugins.json');
+        vol.mkdirSync(path.dirname(installedPluginsPath), { recursive: true });
+        vol.writeFileSync(installedPluginsPath, JSON.stringify({
+            version: 2,
+            plugins: {
+                'sppt@set-prompt': [{ scope: 'project' }],
+                'set-prompt@set-prompt': [{ scope: 'project' }],
+                'akms@alkemic-studio-plugins': [{ scope: 'project' }],
+            },
+        }));
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        await unlinkClaudeCode(false);
+
+        const result = JSON.parse(vol.readFileSync(installedPluginsPath, 'utf-8') as string);
+        expect(result.plugins['sppt@set-prompt']).toBeUndefined();
+        expect(result.plugins['set-prompt@set-prompt']).toBeUndefined();
+        expect(result.plugins['akms@alkemic-studio-plugins']).toBeDefined();
+    });
+
+    it('known_marketplaces.json에서 set-prompt 항목만 제거, 나머지 보존', async () => {
+        const knownMarketplacesPath = path.join(os.homedir(), '.claude', 'plugins', 'known_marketplaces.json');
+        vol.mkdirSync(path.dirname(knownMarketplacesPath), { recursive: true });
+        vol.writeFileSync(knownMarketplacesPath, JSON.stringify({
+            'set-prompt': { source: { source: 'directory' } },
+            'alkemic-studio-plugins': { source: { source: 'git' } },
+        }));
+        vi.mocked(confirm).mockResolvedValue(true);
+
+        await unlinkClaudeCode(false);
+
+        const result = JSON.parse(vol.readFileSync(knownMarketplacesPath, 'utf-8') as string);
+        expect(result['set-prompt']).toBeUndefined();
+        expect(result['alkemic-studio-plugins']).toBeDefined();
+    });
+
+    it('installed_plugins.json, known_marketplaces.json 없어도 오류 없음', async () => {
+        vi.mocked(confirm).mockResolvedValue(true);
+        await expect(unlinkClaudeCode(false)).resolves.not.toThrow();
     });
 });
 
@@ -593,20 +688,240 @@ describe('unlinkAntigravity', () => {
     });
 });
 
-// ─── linkCommand (interactive deselection) ────────────────────────────────────
+// ─── linkCodex ───────────────────────────────────────────────────────────────
 
-describe('linkCommand (interactive)', () => {
+describe('linkCodex', () => {
     beforeEach(() => {
         vol.reset();
         vi.clearAllMocks();
+        vi.mocked(configManager.save).mockReturnValue(true);
+    });
+
+    it('이번 버전에서 비활성화 → CODEX_DIR 미생성, save 미호출', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(true);
+
+        await linkCodex();
+
+        expect(vol.existsSync(CODEX_DIR)).toBe(false);
+        expect(configManager.save).not.toHaveBeenCalled();
+    });
+});
+
+// ─── unlinkCodex ──────────────────────────────────────────────────────────────
+
+describe('unlinkCodex', () => {
+    beforeEach(() => {
+        vol.reset();
+        vi.clearAllMocks();
+        configManager.codex = null;
+        vi.mocked(configManager.save).mockReturnValue(true);
+    });
+
+    it('force=false, 사용자 취소 → 심볼릭 링크 유지', async () => {
+        vol.mkdirSync(CODEX_DIR, { recursive: true });
+        const fakeTarget = '/fake/repo/skills';
+        vol.mkdirSync(fakeTarget, { recursive: true });
+        vol.symlinkSync(fakeTarget, path.join(CODEX_DIR, 'skills'));
+        vi.mocked(confirm).mockResolvedValue(false);
+
+        await unlinkCodex(false);
+
+        expect(vol.lstatSync(path.join(CODEX_DIR, 'skills')).isSymbolicLink()).toBe(true);
+    });
+
+    it('force=true → confirm 없이 심볼릭 링크 제거', async () => {
+        vol.mkdirSync(CODEX_DIR, { recursive: true });
+        const fakeTarget = '/fake/repo/skills';
+        vol.mkdirSync(fakeTarget, { recursive: true });
+        vol.symlinkSync(fakeTarget, path.join(CODEX_DIR, 'skills'));
+
+        await unlinkCodex(true);
+
+        expect(confirm).not.toHaveBeenCalled();
+        expect(vol.existsSync(path.join(CODEX_DIR, 'skills'))).toBe(false);
+    });
+
+    it('백업 존재 → 복원', async () => {
+        configManager.codex = { path: CODEX_DIR, backup_path: CODEX_BACKUP_DIR };
+        vol.mkdirSync(CODEX_DIR, { recursive: true });
+        vol.mkdirSync(path.join(CODEX_BACKUP_DIR, 'skills'), { recursive: true });
+        vol.writeFileSync(path.join(CODEX_BACKUP_DIR, 'skills', 'original.md'), 'backup');
+        const fakeTarget = '/fake/repo/skills';
+        vol.mkdirSync(fakeTarget, { recursive: true });
+        vol.symlinkSync(fakeTarget, path.join(CODEX_DIR, 'skills'));
+
+        await unlinkCodex(true);
+
+        expect(vol.existsSync(path.join(CODEX_DIR, 'skills', 'original.md'))).toBe(true);
+    });
+
+    it('성공 시 configManager.codex = null, save 호출', async () => {
+        await unlinkCodex(true);
+
+        expect(configManager.codex).toBeNull();
+        expect(configManager.save).toHaveBeenCalled();
+    });
+});
+
+// ─── linkCursor ───────────────────────────────────────────────────────────────
+
+describe('linkCursor', () => {
+    beforeEach(() => {
+        vol.reset();
+        vi.clearAllMocks();
+        vi.mocked(configManager.save).mockReturnValue(true);
+    });
+
+    it('repo_path 미설정 → CURSOR_DIR 미생성', async () => {
+        configManager.repo_path = null;
+
+        await linkCursor();
+
+        expect(vol.existsSync(CURSOR_DIR)).toBe(false);
+    });
+
+    it('repo_path 설정 → CURSOR_DIR 생성', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        await linkCursor();
+
+        expect(vol.existsSync(CURSOR_DIR)).toBe(true);
+    });
+
+    it('marketplace.json, plugin.json 생성', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        await linkCursor();
+
+        const marketplacePath = path.join(CURSOR_DIR, '.cursor-plugin', 'marketplace.json');
+        const pluginPath = path.join(CURSOR_DIR, 'plugins', 'local', 'set-prompt', '.cursor-plugin', 'plugin.json');
+
+        expect(vol.existsSync(marketplacePath)).toBe(true);
+        expect(vol.existsSync(pluginPath)).toBe(true);
+    });
+
+    it('skills 디렉토리 존재 시 심볼릭 링크 생성', async () => {
+        const repoPath = '/fake/repo';
+        configManager.repo_path = repoPath;
+
+        vol.fromJSON({ [`${repoPath}/skills/test.md`]: 'test' });
+        vi.mocked(pathExists).mockResolvedValue(true);
+
+        await linkCursor();
+
+        const dest = path.join(CURSOR_DIR, 'plugins', 'local', 'set-prompt', 'skills');
+        expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
+    });
+
+    it('rules 디렉토리 존재 시 심볼릭 링크 생성', async () => {
+        const repoPath = '/fake/repo';
+        configManager.repo_path = repoPath;
+
+        vol.fromJSON({ [`${repoPath}/rules/test.mdc`]: 'test' });
+        vi.mocked(pathExists).mockResolvedValue(true);
+
+        await linkCursor();
+
+        const dest = path.join(CURSOR_DIR, 'plugins', 'local', 'set-prompt', 'rules');
+        expect(vol.lstatSync(dest).isSymbolicLink()).toBe(true);
+    });
+
+    it('CURSOR_PLUGIN_DIR → pluginDir symlink 생성', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        await linkCursor();
+
+        expect(vol.lstatSync(CURSOR_PLUGIN_DIR).isSymbolicLink()).toBe(true);
+    });
+
+    it('성공 시 configManager.cursor에 path, plugin_dir 저장', async () => {
+        configManager.repo_path = '/fake/repo';
+        vi.mocked(pathExists).mockResolvedValue(false);
+
+        await linkCursor();
+
+        expect(configManager.cursor).toEqual({ path: CURSOR_DIR, plugin_dir: CURSOR_PLUGIN_DIR });
+        expect(configManager.save).toHaveBeenCalled();
+    });
+});
+
+// ─── unlinkCursor ─────────────────────────────────────────────────────────────
+
+describe('unlinkCursor', () => {
+    beforeEach(() => {
+        vol.reset();
+        vi.clearAllMocks();
+        configManager.cursor = null;
+        vi.mocked(configManager.save).mockReturnValue(true);
+    });
+
+    it('force=false, 사용자 취소 → 아무것도 제거하지 않음', async () => {
+        vol.mkdirSync(CURSOR_DIR, { recursive: true });
+        vi.mocked(confirm).mockResolvedValue(false);
+
+        await unlinkCursor(false);
+
+        expect(vol.existsSync(CURSOR_DIR)).toBe(true);
+        expect(configManager.save).not.toHaveBeenCalled();
+    });
+
+    it('force=true → confirm 없이 CURSOR_PLUGIN_DIR 심볼릭 링크 제거', async () => {
+        const pluginDir = path.join(CURSOR_DIR, 'plugins', 'local', 'set-prompt');
+        vol.mkdirSync(pluginDir, { recursive: true });
+        vol.mkdirSync(path.dirname(CURSOR_PLUGIN_DIR), { recursive: true });
+        vol.symlinkSync(pluginDir, CURSOR_PLUGIN_DIR);
+
+        await unlinkCursor(true);
+
+        expect(confirm).not.toHaveBeenCalled();
+        expect(vol.existsSync(CURSOR_PLUGIN_DIR)).toBe(false);
+    });
+
+    it('force=true → CURSOR_DIR 제거', async () => {
+        vol.mkdirSync(CURSOR_DIR, { recursive: true });
+
+        await unlinkCursor(true);
+
+        expect(vol.existsSync(CURSOR_DIR)).toBe(false);
+    });
+
+    it('성공 시 configManager.cursor = null, save 호출', async () => {
+        await unlinkCursor(true);
+
+        expect(configManager.cursor).toBeNull();
+        expect(configManager.save).toHaveBeenCalled();
+    });
+});
+
+// ─── linkCommand (interactive deselection) ────────────────────────────────────
+
+describe('linkCommand (interactive)', () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+        throw new Error('process.exit called');
+    }) as any);
+
+    beforeEach(() => {
+        vol.reset();
+        vi.clearAllMocks();
+        exitSpy.mockClear();
         configManager.repo_path = '/fake/repo';
         vi.mocked(configManager.isClaudeCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(false);
         vi.mocked(configManager.isCodexEnabled).mockReturnValue(false);
         vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isCursorEnabled).mockReturnValue(false);
         vi.mocked(configManager.save).mockReturnValue(true);
         vi.mocked(pathExists).mockResolvedValue(false);
+    });
+
+    it('알 수 없는 tool 인자 → process.exit(1)', async () => {
+        await expect(linkCommand('unknown-tool')).rejects.toThrow('process.exit called');
+        expect(exitSpy).toHaveBeenCalledWith(1);
     });
 
     it('미연결 → 선택 → linkRooCode 호출', async () => {

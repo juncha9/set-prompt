@@ -15,23 +15,24 @@ import { scaffoldCommand } from './scaffold-command';
  * @returns 등록에 성공한 경우 true, 사용자가 취소한 경우 false
  */
 const cloneRepo = async (remoteUrl: string): Promise<boolean> => {
-    const proceed = await confirm({
-        message: `Clone and register "${remoteUrl}"?`,
-        default: true,
-    });
-    if (proceed == false) {
-        console.log(chalk.yellow('Cancelled.'));
-        return false;
-    }
-
     const localPath = path.join(HOME_DIR, 'repo');
 
+    let backupPath: string | null = null;
     if (fs.existsSync(localPath) == true) {
-        console.warn(chalk.yellow(`Existing repo found. Backing up before proceeding.`));
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const backupPath = path.join(HOME_DIR, `repo.bak.${timestamp}`);
-        fs.renameSync(localPath, backupPath);
-        console.log(chalk.dim(`  Backed up to: ${backupPath}`));
+        backupPath = path.join(HOME_DIR, `repo.bak.${timestamp}`);
+        try {
+            fs.renameSync(localPath, backupPath);
+            console.log(chalk.yellow('  backed up') + chalk.dim(` existing repo → ${backupPath}`));
+        } catch (ex: any) {
+            if (ex.code === 'EPERM') {
+                console.error(chalk.red('❌ Cannot rename existing repo — it may be open in another process.'));
+                console.log(chalk.dim(`   Close any editors or terminals using: ${localPath}`));
+            } else {
+                console.error(chalk.red(`❌ Failed to backup existing repo: ${ex.message}`));
+            }
+            return false;
+        }
     }
 
     fs.mkdirSync(path.dirname(localPath), { recursive: true });
@@ -42,6 +43,11 @@ const cloneRepo = async (remoteUrl: string): Promise<boolean> => {
         process.exit(1);
     }
     console.log('✅ Cloned successfully.');
+
+    if (backupPath != null) {
+        fs.rmSync(backupPath, { recursive: true, force: true });
+        console.log(chalk.red('  removed') + chalk.dim(` backup → ${backupPath}`));
+    }
 
     await scaffoldCommand(localPath, { force: true });
 
@@ -66,6 +72,29 @@ export const installCommand = async (target: string): Promise<boolean> => {
             console.log(chalk.dim('   Example: set-prompt install https://github.com/you/my-prompts'));
             process.exit(1);
         }
+
+        const normalizeUrl = (url: string) => url.replace(/\.git$/, '').toLowerCase();
+
+        if (configManager.repo_path != null) {
+            if (normalizeUrl(configManager.remote_url ?? '') === normalizeUrl(target)) {
+                console.error(chalk.red(`❌ Already installed from the same URL: ${target}`));
+                console.log(chalk.dim('   Use `set-prompt update` to pull the latest changes.'));
+                return false;
+            }
+            console.warn(chalk.yellow(`⚠ Switching repo: ${configManager.remote_url} → ${target}`));
+            const proceed = await confirm({ message: 'Replace existing installation?', default: false });
+            if (!proceed) {
+                console.log(chalk.yellow('Cancelled.'));
+                return false;
+            }
+        } else {
+            const proceed = await confirm({ message: `Clone and register "${target}"?`, default: true });
+            if (!proceed) {
+                console.log(chalk.yellow('Cancelled.'));
+                return false;
+            }
+        }
+
         return await cloneRepo(target);
     } catch (ex: any) {
         console.error(chalk.red(`Unexpected error: ${ex.message}`), ex);

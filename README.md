@@ -80,16 +80,18 @@ set-prompt link claudecode   # link Claude Code only
 set-prompt link roocode      # link RooCode only
 set-prompt link openclaw     # link OpenClaw only
 set-prompt link antigravity  # link Antigravity only
+set-prompt link cursor       # link Cursor only
 ```
 
 The interactive mode shows all agents with their current state. **Check to link, uncheck to unlink** — existing directories are backed up before being replaced.
 
 | Agent | Where prompts land | What gets linked |
 |---|---|---|
-| Claude Code | `~/.set-prompt/claudecode/` (plugin) | `skills/`, `commands/`, `hooks/`, `agents/` |
+| Claude Code | `~/.set-prompt/claude-code/` (plugin) | `skills/`, `commands/`, `hooks/`, `agents/` |
 | RooCode | `~/.roo/` | `skills/`, `commands/` |
 | OpenClaw | `~/.openclaw/workspace/` | `skills/` |
 | Antigravity | `~/.gemini/antigravity/` | `skills/` |
+| Cursor | `~/.cursor/` (plugin) | `skills/`, `commands/` |
 
 ---
 
@@ -141,9 +143,10 @@ npm test                         # Run tests with vitest
 
 `set-prompt` modifies configuration files managed by third-party AI agent applications:
 
-- **Claude Code** — writes to `~/.claude/settings.json`
+- **Claude Code** — writes to `~/.claude/settings.json` and `~/.claude/plugins/installed_plugins.json`
 - **RooCode** — replaces directories in `~/.roo/`
 - **OpenClaw** — replaces directories in `~/.openclaw/workspace/`
+- **Cursor** — writes to `~/.cursor/`
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 
@@ -164,14 +167,15 @@ Stored at `~/.set-prompt/config.json`, managed via `ConfigManager`.
 │       ├── skills/
 │       ├── commands/
 │       └── hooks/
-└── claudecode/         # Claude Code plugin output
+└── claude-code/        # Claude Code plugin output
     ├── .claude-plugin/
     │   └── marketplace.json
-    └── plugins/set-prompt/
+    └── plugins/sppt/
         ├── .claude-plugin/plugin.json
         ├── skills/      → symlink to repo/skills/
         ├── commands/    → symlink to repo/commands/
-        └── hooks/       → symlink to repo/hooks/
+        ├── hooks/       → symlink to repo/hooks/
+        └── agents/      → symlink to repo/agents/
 
 ~/.roo/                  # RooCode integration (symlinks)
 ├── SET_PROMPT_BACKUP/  # backup of original dirs before linking
@@ -195,7 +199,7 @@ Stored at `~/.set-prompt/config.json`, managed via `ConfigManager`.
 
 - **Node.js** 18+
 - **Git** (must be available in `PATH` for `set-prompt install`)
-- **Windows**: symlink creation requires either Developer Mode enabled or running as Administrator
+- **Windows only**: symlink creation requires Developer Mode enabled or running as Administrator (Linux/macOS work out of the box)
 
 ## 🤝 Contributing
 

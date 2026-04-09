@@ -13,6 +13,10 @@ export const OPENCLAW_DIR = path.join(os.homedir(), '.openclaw', 'workspace');
 export const OPENCLAW_BACKUP_DIR = path.join(OPENCLAW_DIR, 'SET_PROMPT_BACKUP');
 export const ANTIGRAVITY_DIR = path.join(os.homedir(), '.gemini', 'antigravity');
 export const ANTIGRAVITY_BACKUP_DIR = path.join(ANTIGRAVITY_DIR, 'SET_PROMPT_BACKUP');
+export const CODEX_DIR = path.join(os.homedir(), '.codex');
+export const CODEX_BACKUP_DIR = path.join(CODEX_DIR, 'SET_PROMPT_BACKUP');
+export const CURSOR_DIR = path.join(HOME_DIR, 'cursor');
+export const CURSOR_PLUGIN_DIR = path.join(os.homedir(), '.cursor', 'plugins', 'local', 'set-prompt');
 
 export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks', 'agents'] as const;
 
@@ -22,16 +26,18 @@ export enum TOOLS {
     OPENCLAW     = 'openclaw',
     CODEX        = 'codex',
     ANTIGRAVITY  = 'antigravity',
+    CURSOR       = 'cursor',
 }
 
 export type AgentId = TOOLS;
 
 export const AGENT_PROMPT_DIRS: Record<TOOLS, readonly string[]> = {
-    [TOOLS.CLAUDECODE]:  ['skills', 'commands', 'hooks', "agents"],
+    [TOOLS.CLAUDECODE]:  ['skills', 'commands', 'hooks', 'agents'],
     [TOOLS.ROOCODE]:     ['skills', 'commands'],
     [TOOLS.OPENCLAW]:    ['skills'],
     [TOOLS.CODEX]:       ['skills', 'commands'],
     [TOOLS.ANTIGRAVITY]: ['skills'],
+    [TOOLS.CURSOR]:      ['skills', 'agents', 'rules'],
 };
 
 export const ALL_AGENTS = [
@@ -40,4 +46,5 @@ export const ALL_AGENTS = [
     { name: 'OpenClaw',     value: TOOLS.OPENCLAW },
     { name: 'Codex',        value: TOOLS.CODEX },
     { name: 'Antigravity',  value: TOOLS.ANTIGRAVITY },
+    { name: 'Cursor',       value: TOOLS.CURSOR },
 ] as const;

@@ -16,11 +16,17 @@ export const OpenclawConfigSchema = z.object({
 
 export const CodexConfigSchema = z.object({
     path: z.string().nullable(),
+    backup_path: z.string().nullish().optional(),
 });
 
 export const AntigravityConfigSchema = z.object({
     path: z.string().nullable(),
     backup_path: z.string().nullish().optional(),
+});
+
+export const CursorConfigSchema = z.object({
+    path: z.string().nullable(),        // ~/.set-prompt/cursor (플러그인 파일 구조)
+    plugin_dir: z.string().nullable(),  // ~/.cursor/plugins/set-prompt (설치 symlink)
 });
 
 export const GlobalConfigSchema = z.object({
@@ -31,6 +37,7 @@ export const GlobalConfigSchema = z.object({
     openclaw:    OpenclawConfigSchema.nullable(),
     codex:       CodexConfigSchema.nullish().optional(),
     antigravity: AntigravityConfigSchema.nullish().optional(),
+    cursor:      CursorConfigSchema.nullish().optional(),
 });
 
 export type GlobalConfig     = z.infer<typeof GlobalConfigSchema>;
@@ -39,3 +46,4 @@ export type RoocodeConfig    = z.infer<typeof RoocodeConfigSchema>;
 export type OpenclawConfig   = z.infer<typeof OpenclawConfigSchema>;
 export type CodexConfig      = z.infer<typeof CodexConfigSchema>;
 export type AntigravityConfig = z.infer<typeof AntigravityConfigSchema>;
+export type CursorConfig      = z.infer<typeof CursorConfigSchema>;
