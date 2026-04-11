@@ -14,11 +14,19 @@
         "test": "vitest --reporter=verbose"
     },
     "keywords": [
+        "cli",
         "prompt-manager",
         "ai-coding",
-        "openclaw",
+        
+        "git",
+        "version-control",
+        "sync",
         "claude-code",
-        "roo-code"
+        "roo-code",
+        "antigravity",
+        "openclaw",
+        "cursor",
+        "codex"
     ],
     "author": "juncha9 (https://github.com/juncha9)",
     "license": "MIT",
