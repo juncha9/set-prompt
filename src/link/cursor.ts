@@ -71,8 +71,8 @@ export const linkCursor = async (): Promise<void> => {
             console.log(chalk.dim(`  ├── `) + chalk.bold(`${dir}/`) + chalk.dim(` → ${src}`) + chalk.green(' ✓'));
         }
 
-        // ── 3. mcp.json 하드링크 ────────────────────────────────────────
-        const mcpSrc = path.join(repoPath, 'mcp.json');
+        // ── 3. .mcp.json 하드링크 ───────────────────────────────────────
+        const mcpSrc = path.join(repoPath, '.mcp.json');
         const mcpDest = path.join(CURSOR_DIR, 'mcp.json');
         if (fs.existsSync(mcpSrc)) {
             if (fs.existsSync(mcpDest) && fs.statSync(mcpDest).ino !== fs.statSync(mcpSrc).ino) {

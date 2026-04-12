@@ -15,7 +15,7 @@ One repo. Every agent. Always in sync.
                     ├── hooks/
                     ├── agents/
                     ├── rules/
-                    ├── mcp.json
+                    ├── .mcp.json
                     ├── .app.json
                     ├── .claude-plugin/plugin.json
                     └── .codex-plugin/plugin.json
@@ -71,7 +71,7 @@ my-prompts/
 ├── hooks/
 ├── agents/
 ├── rules/
-├── mcp.json
+├── .mcp.json
 ├── .app.json
 ├── .claude-plugin/plugin.json
 ├── .codex-plugin/plugin.json
@@ -117,7 +117,7 @@ The interactive mode shows all agents with their current state. **Check to link,
 set-prompt update    # git pull latest changes from remote
 ```
 
-Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink, so edits to either side are reflected automatically.
+Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
 
 ---
 
@@ -151,7 +151,7 @@ set-prompt uninstall
 │   ├── hooks/
 │   ├── agents/
 │   ├── rules/
-│   ├── mcp.json
+│   ├── .mcp.json
 │   ├── .app.json
 │   ├── .claude-plugin/plugin.json
 │   └── .codex-plugin/plugin.json
@@ -185,7 +185,7 @@ set-prompt uninstall
 ├── agents/ → repo/agents
 ├── commands/ → repo/commands
 ├── hooks/ → repo/hooks
-└── mcp.json ⇔ repo/mcp.json  (hardlink)
+└── mcp.json ⇔ repo/.mcp.json  (hardlink)
 ```
 
 ## Warning
@@ -197,7 +197,7 @@ set-prompt uninstall
 - **RooCode** — replaces directories in `~/.roo/`
 - **OpenClaw** — replaces directories in `~/.openclaw/workspace/`
 - **Antigravity** — replaces directories in `~/.gemini/antigravity/`
-- **Cursor** — replaces directories and mcp.json in `~/.cursor/`
+- **Cursor** — replaces directories and `mcp.json` in `~/.cursor/`
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 
