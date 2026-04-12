@@ -35,6 +35,16 @@ npm install -g set-prompt
 npx set-prompt <command>
 ```
 
+## CLI Alias
+
+`sppt` is a built-in short alias for `set-prompt` — all commands work with either name:
+
+```bash
+sppt install <url>        # connect an existing repo
+sppt link                 # link to AI agents
+sppt update               # pull latest changes
+```
+
 ## Workflow
 
 ### Step 1 — Connect your prompt repository
