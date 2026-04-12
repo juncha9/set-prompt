@@ -15,7 +15,7 @@ export const ensureClaudePluginManifest = (repoPath: string): void => {
     fs.writeFileSync(jsonPath, JSON.stringify({
         name: PLUGIN_NAME,
         version: '1.0.0',
-        description: `Managed by set-prompt — ${repoPath}`,
+        description: 'Managed by set-prompt',
     }, null, 4), { encoding: 'utf-8' });
 };
 
@@ -26,7 +26,7 @@ export const ensureCodexPluginManifest = (repoPath: string): void => {
     fs.writeFileSync(jsonPath, JSON.stringify({
         name: PLUGIN_NAME,
         version: '1.0.0',
-        description: `Managed by set-prompt — ${repoPath}`,
+        description: 'Managed by set-prompt',
         skills: './skills/',
         mcpServers: './.mcp.json',
         apps: './.app.json',

@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.4] - 2026-04-13
+
+### Changed
+- `SET_PROMPT_GUIDE` template: Structure section updated to include `.mcp.json`, `.app.json`, `.claude-plugin/`, `.codex-plugin/`
+- Plugin manifest templates (`ensureClaudePluginManifest`, `ensureCodexPluginManifest`) — removed local repo path from `description` field to prevent leaking machine-specific paths into git history
+
+---
+
 ## [0.5.3] - 2026-04-13
 
 ### Added

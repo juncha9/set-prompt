@@ -19,9 +19,15 @@ This is a shared prompt repository linked to various AI agents via \`set-prompt 
 ├── agents/                # Agent definitions (Claude Code, Cursor)
 │   └── <agent-name>/
 │       └── AGENT.md
-└── rules/                 # Rule definitions (Cursor)
-    └── <rule-name>/
-        └── RULE.md
+├── rules/                 # Rule definitions (Cursor)
+│   └── <rule-name>/
+│       └── RULE.md
+├── .mcp.json              # MCP server configurations
+├── .app.json              # Application configurations
+├── .claude-plugin/
+│   └── plugin.json        # Claude Code plugin manifest
+└── .codex-plugin/
+    └── plugin.json        # Codex plugin manifest
 \`\`\`
 
 ## Usage

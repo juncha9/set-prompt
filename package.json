@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.5.3",
+    "version": "0.5.4",
     "description": "Sync your prompt library across AI coding tools from a single git repo",
     "main": "dist/index.js",
     "bin": {
