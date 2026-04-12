@@ -25,8 +25,8 @@ export const AntigravityConfigSchema = z.object({
 });
 
 export const CursorConfigSchema = z.object({
-    path: z.string().nullable(),        // ~/.set-prompt/cursor (플러그인 파일 구조)
-    plugin_dir: z.string().nullable(),  // ~/.cursor/plugins/set-prompt (설치 symlink)
+    path: z.string().nullable(),
+    backup_path: z.string().nullish().optional(),
 });
 
 export const GlobalConfigSchema = z.object({

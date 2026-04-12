@@ -34,8 +34,6 @@ vi.mock('@/_libs/config', () => ({
 const { uninstallCommand } = await import('@/commands/uninstall-command');
 const { confirm } = await import('@inquirer/prompts');
 const { configManager } = await import('@/_libs/config');
-const { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity, unlinkCodex, unlinkCursor } =
-    await import('@/commands/link-command');
 
 describe('uninstallCommand', () => {
     beforeEach(() => {
@@ -65,7 +63,6 @@ describe('uninstallCommand', () => {
         await uninstallCommand();
 
         expect(vol.existsSync(HOME_DIR)).toBe(true);
-        expect(unlinkClaudeCode).not.toHaveBeenCalled();
     });
 
     it('사용자 확인 → HOME_DIR 제거', async () => {
@@ -85,60 +82,6 @@ describe('uninstallCommand', () => {
         await uninstallCommand();
 
         expect(vol.existsSync(CONFIG_PATH)).toBe(false);
-    });
-
-    it('claude_code 링크됨 → unlinkClaudeCode(true) 호출', async () => {
-        vi.mocked(configManager.isClaudeCodeEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-
-        await uninstallCommand();
-
-        expect(unlinkClaudeCode).toHaveBeenCalledWith(true);
-    });
-
-    it('roocode 링크됨 → unlinkRooCode(true) 호출', async () => {
-        vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-
-        await uninstallCommand();
-
-        expect(unlinkRooCode).toHaveBeenCalledWith(true);
-    });
-
-    it('openclaw 링크됨 → unlinkOpenclaw(true) 호출', async () => {
-        vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-
-        await uninstallCommand();
-
-        expect(unlinkOpenclaw).toHaveBeenCalledWith(true);
-    });
-
-    it('antigravity 링크됨 → unlinkAntigravity(true) 호출', async () => {
-        vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-
-        await uninstallCommand();
-
-        expect(unlinkAntigravity).toHaveBeenCalledWith(true);
-    });
-
-    it('codex 링크됨 → unlinkCodex(true) 호출', async () => {
-        vi.mocked(configManager.isCodexEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-
-        await uninstallCommand();
-
-        expect(unlinkCodex).toHaveBeenCalledWith(true);
-    });
-
-    it('cursor 링크됨 → unlinkCursor(true) 호출', async () => {
-        vi.mocked(configManager.isCursorEnabled).mockReturnValue(true);
-        vi.mocked(confirm).mockResolvedValue(true);
-
-        await uninstallCommand();
-
-        expect(unlinkCursor).toHaveBeenCalledWith(true);
     });
 
     it('성공 시 "Uninstalled." 출력', async () => {

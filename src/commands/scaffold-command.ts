@@ -2,58 +2,58 @@ import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
 import { confirm } from '@inquirer/prompts';
-import { PROMPT_DIR_NAMES, TAB } from '@/_defs';
+import { PROMPT_DIR_NAMES, PLUGIN_NAME, TAB } from '@/_defs';
 import { SET_PROMPT_GUIDE } from '@/_libs/templates';
 import { configManager } from '@/_libs/config';
 
-const REQUIRED_DIRS = ['skills', 'commands'] as const;
-const OPTIONAL_DIRS = ['hooks', 'agents'] as const;
+// ─── 플러그인 매니페스트 생성 함수 ──────────────────────────────────────────
 
-
-
-/**
- * 주어진 경로의 레포 디렉터리 구조를 콘솔에 출력하고 유효성을 검사한다.
- * - REQUIRED_DIRS(skills, commands)가 모두 존재하면 true를 반환한다.
- * - 하나라도 누락되면 해당 항목을 빨간색으로 표시하고 false를 반환한다.
- * - OPTIONAL_DIRS(hooks)는 존재 여부만 표시하며 반환값에 영향을 주지 않는다.
- */
-const printStructure = async (localPath: string): Promise<boolean> => {
-    let valid = true;
-    for (const dir of REQUIRED_DIRS) {
-        const exists = fs.existsSync(path.join(localPath, dir));
-        if (exists) {
-            console.log(`${TAB}✅ ${dir}/`);
-        } else {
-            console.log(`${TAB}❌ ${dir}/ ${chalk.red('(missing)')}`);
-            valid = false;
-        }
-    }
-    for (const dir of OPTIONAL_DIRS) {
-        const exists = fs.existsSync(path.join(localPath, dir));
-        console.log(`${TAB}${chalk.dim(exists ? '✓' : '○')} ${dir}/ ${exists ? '' : chalk.dim('(optional)')}`);
-    }
-    return valid;
+export const ensureClaudePluginManifest = (repoPath: string): void => {
+    const metaDir = path.join(repoPath, '.claude-plugin');
+    const jsonPath = path.join(metaDir, 'plugin.json');
+    fs.mkdirSync(metaDir, { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify({
+        name: PLUGIN_NAME,
+        version: '1.0.0',
+        description: `Managed by set-prompt — ${repoPath}`,
+    }, null, 4), { encoding: 'utf-8' });
 };
 
+export const ensureCodexPluginManifest = (repoPath: string): void => {
+    const metaDir = path.join(repoPath, '.codex-plugin');
+    const jsonPath = path.join(metaDir, 'plugin.json');
+    fs.mkdirSync(metaDir, { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify({
+        name: PLUGIN_NAME,
+        version: '1.0.0',
+        description: `Managed by set-prompt — ${repoPath}`,
+        skills: './skills/',
+        mcpServers: './mcp.json',
+        apps: './.app.json',
+    }, null, 4), { encoding: 'utf-8' });
+};
 
+// ─── 설정 파일 생성 함수 ─────────────────────────────────────────────────────
 
-/**
- * 레포의 디렉터리 구조를 스캐폴딩한다.
- *
- * 동작 흐름:
- * 1. `localPath`가 주어지면 해당 경로를, 없으면 등록된 `repo_path`를 대상으로 사용한다.
- * 2. 대상 경로가 유효한 디렉터리인지 확인한다.
- * 3. `printStructure`로 현재 구조를 출력하고 필수 디렉터리가 모두 있는지 확인한다.
- * 4. 구조가 유효하고 `force` 옵션이 없으면 그대로 종료한다.
- * 5. 누락된 디렉터리가 있거나 `force`가 true이면:
- *    - `force`가 아닐 경우 사용자에게 계속할지 확인(confirm)한다.
- *    - SET_PROMPT_GUIDE.md 파일을 생성(또는 덮어쓰기)한다.
- *    - PROMPT_DIR_NAMES에 정의된 디렉터리를 순서대로 생성한다.
- *    - 이미 존재하는 디렉터리는 건너뛴다.
- * 6. 성공 시 true, 사용자가 취소하면 false를 반환한다.
- */
-export const scaffoldCommand = async (localPath?: string, options: { force?: boolean } = {}): Promise<boolean> => {
+export const ensureMcpJson = (repoPath: string): boolean => {
+    const mcpJsonPath = path.join(repoPath, 'mcp.json');
+    if (fs.existsSync(mcpJsonPath)) { return false; }
+    fs.writeFileSync(mcpJsonPath, JSON.stringify({ mcpServers: {} }, null, 4), { encoding: 'utf-8' });
+    return true;
+};
+
+export const ensureAppJson = (repoPath: string): boolean => {
+    const appJsonPath = path.join(repoPath, '.app.json');
+    if (fs.existsSync(appJsonPath)) { return false; }
+    fs.writeFileSync(appJsonPath, JSON.stringify({ apps: {} }, null, 4), { encoding: 'utf-8' });
+    return true;
+};
+
+// ─── scaffold ───────────────────────────────────────────────────────────────
+
+export const scaffoldCommand = async (localPath?: string): Promise<boolean> => {
     try {
+        // ── 1. 대상 경로 결정 ────────────────────────────────────────────
         let targetPath: string | null = null;
 
         if (localPath != null) {
@@ -72,57 +72,46 @@ export const scaffoldCommand = async (localPath?: string, options: { force?: boo
             process.exit(1);
         }
 
-        if (options.force !== true) {
-            console.log(chalk.dim(`Checking repo structure at: ${targetPath}`));
-        }
-        const valid = options.force === true ? false : await printStructure(targetPath);
+        console.log(chalk.dim(`Scaffolding: ${targetPath}\n`));
 
-        if (valid) {
-            console.log(chalk.green('Repo structure is valid.'));
-            return true;
-        }
-
-        if (!valid) {
-            if (options.force !== true) {
-                const proceed = await confirm({
-                    message: 'Some directories are missing. Scaffold them now?',
-                    default: true,
-                });
-                if (proceed === false) {
-                    console.log(chalk.yellow('Scaffold skipped.'));
-                    return false;
-                }
-            }
-
-            const created: string[] = [];
-
+        // ── 2. 가이드 문서 ───────────────────────────────────────────────
+        const writeGuide = await confirm({
+            message: 'Generate SET_PROMPT_GUIDE.md? (reference doc for writing prompts)',
+            default: true,
+        });
+        if (writeGuide) {
             const guideMdPath = path.join(targetPath, 'SET_PROMPT_GUIDE.md');
             fs.writeFileSync(guideMdPath, SET_PROMPT_GUIDE, { encoding: 'utf-8', flag: 'w' });
-            created.push('  SET_PROMPT_GUIDE.md');
+            console.log(`${TAB}${chalk.green('✓')} SET_PROMPT_GUIDE.md`);
+        }
 
-            for (const dirName of PROMPT_DIR_NAMES) {
-                const dirPath = path.join(targetPath, dirName);
-                if (fs.existsSync(dirPath)) {
-                    console.warn(chalk.yellow(`Directory already exists: '${dirName}' (skipping)`));
-                } else {
-                    fs.mkdirSync(dirPath, { recursive: true });
-                    created.push(`  ${dirName}/`);
-                }
-                const gitkeepPath = path.join(dirPath, '.gitkeep');
-                if (!fs.existsSync(gitkeepPath)) {
-                    fs.writeFileSync(gitkeepPath, '', { encoding: 'utf-8' });
-                    if (!created.includes(`  ${dirName}/`)) {
-                        created.push(`  ${dirName}/.gitkeep`);
-                    }
-                }
+        // ── 3. 프롬프트 디렉토리 ────────────────────────────────────────
+        for (const dirName of PROMPT_DIR_NAMES) {
+            const dirPath = path.join(targetPath, dirName);
+            if (fs.existsSync(dirPath)) {
+                console.log(`${TAB}${chalk.dim('✓')} ${dirName}/`);
+            } else {
+                fs.mkdirSync(dirPath, { recursive: true });
+                console.log(`${TAB}${chalk.green('+')} ${dirName}/`);
             }
-
-            if (created.length > 0) {
-                console.log(chalk.green('Created:'));
-                created.forEach((line) => console.log(line));
+            const gitkeepPath = path.join(dirPath, '.gitkeep');
+            if (!fs.existsSync(gitkeepPath)) {
+                fs.writeFileSync(gitkeepPath, '', { encoding: 'utf-8' });
             }
         }
 
+        // ── 4. 플러그인 매니페스트 ──────────────────────────────────────
+        ensureClaudePluginManifest(targetPath);
+        console.log(`${TAB}${chalk.green('✓')} .claude-plugin/plugin.json`);
+
+        ensureCodexPluginManifest(targetPath);
+        console.log(`${TAB}${chalk.green('✓')} .codex-plugin/plugin.json`);
+
+        // ── 5. 설정 파일 (mcp.json, .app.json) ────────────────────────
+        console.log(`${TAB}${ensureMcpJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} mcp.json`);
+        console.log(`${TAB}${ensureAppJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} .app.json`);
+
+        console.log(chalk.green('\nScaffold complete.'));
         return true;
     } catch (ex: any) {
         console.error(chalk.red(`Failed to scaffold repo structure: ${ex.message}`), ex);

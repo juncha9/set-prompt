@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.0] - 2026-04-13
+
+### Added
+- Codex integration (`link codex`) — marketplace registration, cache symlink, `config.toml` activation
+- `scaffold` now generates `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `mcp.json`, `.app.json`
+- `ensureClaudePluginManifest()`, `ensureCodexPluginManifest()`, `ensureMcpJson()`, `ensureAppJson()` — reusable functions for link to ensure repo has required files
+- `SET_PROMPT_GUIDE.md` generation now asks for confirmation before writing
+- Cursor: `mcp.json` hardlink (`~/.cursor/mcp.json ⇔ repo/mcp.json`) with backup/restore
+- Cursor: `hooks/` directory linking added
+- `templates.ts`: Cursor frontmatter (skills, agents, rules, hooks), Cursor hooks (JSON-based `hooks.json`), Codex plugin spec
+- Tests split by agent: `link-claude-code.test.ts`, `link-roocode.test.ts`, `link-openclaw.test.ts`, `link-antigravity.test.ts`, `link-codex.test.ts`, `link-cursor.test.ts`
+
+### Changed
+- **Link architecture**: `scaffold` creates plugin manifests in repo, `link` symlinks repo directly (no intermediate plugin structure)
+- Claude Code: marketplace `plugins/sppt` → repo symlink; `installed_plugins.json` points to repo directly
+- Codex: `~/.agents/plugins/marketplace.json` + `~/.codex/plugins/cache/.../1.0.0` → repo symlink
+- Cursor: reverted from plugin to dir symlinks (`~/.cursor/skills/`, `agents/`, `commands/`, `hooks/`)
+- `CODEX_DIR` changed from `~/.codex` to `~/.set-prompt/codex` (no longer deletes Codex home directory on unlink)
+- `scaffold`: removed `--force` option and `valid` check — always runs all steps idempotently
+- All symlinks use `junction` on Windows (consistent across agents)
+- All JSON output uses 4-space indentation
+- `CURSOR_PLUGIN_DIR` removed from `_defs` (Cursor no longer uses plugin approach)
+- `link/` source files moved from `src/commands/link/` to `src/link/`
+- Uninstall tests: removed redundant per-agent unlink call assertions
+
+### Removed
+- `ensureCursorPluginManifest()` — Cursor no longer uses plugin manifests
+- Cursor `rules/` from `AGENT_PROMPT_DIRS` — Cursor does not load rules from symlinked directories
+
+---
+
 ## [0.4.0] - 2026-04-10
 
 ### Added

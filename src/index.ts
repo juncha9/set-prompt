@@ -66,9 +66,8 @@ program
     .command('scaffold')
     .description(`🛠️  Verify and create ${chalk.cyan('required directories')} in a prompt repo ${chalk.dim('(-f to force overwrite)')}`)
     .argument('[path]', `path to repo ${chalk.dim('(defaults to installed source)')}`)
-    .option('-f, --force', 'overwrite existing files without prompting')
-    .action(async (localPath?: string, options?: { force?: boolean }) => {
-        await scaffoldCommand(localPath, options);
+    .action(async (localPath?: string) => {
+        await scaffoldCommand(localPath);
     });
 
 program
