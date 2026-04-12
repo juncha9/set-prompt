@@ -28,7 +28,7 @@ export const ensureCodexPluginManifest = (repoPath: string): void => {
         version: '1.0.0',
         description: `Managed by set-prompt — ${repoPath}`,
         skills: './skills/',
-        mcpServers: './mcp.json',
+        mcpServers: './.mcp.json',
         apps: './.app.json',
     }, null, 4), { encoding: 'utf-8' });
 };
@@ -36,7 +36,7 @@ export const ensureCodexPluginManifest = (repoPath: string): void => {
 // ─── 설정 파일 생성 함수 ─────────────────────────────────────────────────────
 
 export const ensureMcpJson = (repoPath: string): boolean => {
-    const mcpJsonPath = path.join(repoPath, 'mcp.json');
+    const mcpJsonPath = path.join(repoPath, '.mcp.json');
     if (fs.existsSync(mcpJsonPath)) { return false; }
     fs.writeFileSync(mcpJsonPath, JSON.stringify({ mcpServers: {} }, null, 4), { encoding: 'utf-8' });
     return true;
@@ -107,8 +107,8 @@ export const scaffoldCommand = async (localPath?: string): Promise<boolean> => {
         ensureCodexPluginManifest(targetPath);
         console.log(`${TAB}${chalk.green('✓')} .codex-plugin/plugin.json`);
 
-        // ── 5. 설정 파일 (mcp.json, .app.json) ────────────────────────
-        console.log(`${TAB}${ensureMcpJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} mcp.json`);
+        // ── 5. 설정 파일 (.mcp.json, .app.json) ───────────────────────
+        console.log(`${TAB}${ensureMcpJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} .mcp.json`);
         console.log(`${TAB}${ensureAppJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} .app.json`);
 
         console.log(chalk.green('\nScaffold complete.'));

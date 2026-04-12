@@ -4,14 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.5.3] - 2026-04-13
+
+### Added
+- `sppt` short alias registered as a CLI binary alongside `set-prompt` — all commands work with either name
+- README: `CLI Alias` section documenting `sppt` usage
+
+### Changed
+- Repo MCP config file renamed from `mcp.json` to `.mcp.json`
+- Cursor hardlink maps repo `.mcp.json` → `~/.cursor/mcp.json` (Cursor expects `mcp.json` in its config dir)
+
+---
+
 ## [0.5.0] - 2026-04-13
 
 ### Added
 - Codex integration (`link codex`) — marketplace registration, cache symlink, `config.toml` activation
-- `scaffold` now generates `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `mcp.json`, `.app.json`
+- `scaffold` now generates `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, `.mcp.json`, `.app.json`
 - `ensureClaudePluginManifest()`, `ensureCodexPluginManifest()`, `ensureMcpJson()`, `ensureAppJson()` — reusable functions for link to ensure repo has required files
 - `SET_PROMPT_GUIDE.md` generation now asks for confirmation before writing
-- Cursor: `mcp.json` hardlink (`~/.cursor/mcp.json ⇔ repo/mcp.json`) with backup/restore
+- Cursor: `.mcp.json` hardlink (`~/.cursor/mcp.json ⇔ repo/.mcp.json`) with backup/restore
 - Cursor: `hooks/` directory linking added
 - `templates.ts`: Cursor frontmatter (skills, agents, rules, hooks), Cursor hooks (JSON-based `hooks.json`), Codex plugin spec
 - Tests split by agent: `link-claude-code.test.ts`, `link-roocode.test.ts`, `link-openclaw.test.ts`, `link-antigravity.test.ts`, `link-codex.test.ts`, `link-cursor.test.ts`
