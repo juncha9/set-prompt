@@ -40,8 +40,23 @@ set-prompt scaffold .
 set-prompt install https://github.com/you/my-prompts
 set-prompt link
 
-# Pull latest changes
-set-prompt update
+# Inspect current state (branch, ahead/behind, changed files)
+set-prompt repo status
+
+# Pull latest changes from remote
+set-prompt repo pull
+
+# Commit + push local edits in one step (auto-generates message if -m omitted)
+set-prompt repo save -m "update skills"
+set-prompt repo save
+
+# Or commit and push separately
+set-prompt repo commit -m "update skills"
+set-prompt repo push
+
+# Jump into the repo or open it in an editor
+cd "$(set-prompt repo path)"
+set-prompt repo open --code
 \`\`\`
 
 ## Frontmatter Reference

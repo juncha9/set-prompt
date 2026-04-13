@@ -42,7 +42,8 @@ npx set-prompt <command>
 ```bash
 sppt install <url>        # connect an existing repo
 sppt link                 # link to AI agents
-sppt update               # pull latest changes
+sppt repo pull            # pull latest changes
+sppt repo save -m "…"     # commit + push local edits
 ```
 
 ## Workflow
@@ -77,6 +78,8 @@ my-prompts/
 ├── .codex-plugin/plugin.json
 └── SET_PROMPT_GUIDE.md          (optional reference doc)
 ```
+
+> **Re-run safety**: `scaffold` never overwrites existing plugin manifests. On re-run, it validates them against required fields and preserves your customizations (custom `name`, `version`, `description`, etc.). Invalid files trigger a warning but stay untouched.
 
 ---
 
@@ -113,8 +116,22 @@ The interactive mode shows all agents with their current state. **Check to link,
 
 ### Step 3 — Keep in sync
 
+Primary flow — pull incoming, save outgoing:
+
 ```bash
-set-prompt update    # git pull latest changes from remote
+set-prompt repo pull                  # fetch + pull latest changes from remote
+set-prompt repo save -m "message"     # stage + commit + push in one step
+set-prompt repo save                  # same, but auto-generates message from changed files
+```
+
+Additional commands:
+
+```bash
+set-prompt repo status                # show branch, ahead/behind, changed files
+set-prompt repo commit -m "message"   # commit locally without pushing
+set-prompt repo push                  # push existing local commits
+set-prompt repo path                  # print repo location (e.g. cd "$(sppt repo path)")
+set-prompt repo open                  # open repo in OS file manager (--code VSCode, --stree Sourcetree)
 ```
 
 Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
@@ -135,9 +152,15 @@ set-prompt uninstall
 |---------|-------------|
 | `install <url>` | Clone remote git repo and register as prompt source |
 | `link [agent]` | Link/unlink agents interactively, or target one directly |
-| `update` | Fetch and pull latest changes from remote repo |
+| `repo status` | Show VCS status: branch, ahead/behind, changed files |
+| `repo pull` | Fetch and pull latest changes from remote repo |
+| `repo commit [-m <msg>]` | Stage all changes and commit locally (auto-generates message from changed files if omitted) |
+| `repo push` | Push local commits to remote |
+| `repo save [-m <msg>]` | Stage + commit + push in one step (macro) |
+| `repo path` | Print the repo path to stdout (e.g. `cd $(sppt repo path)`) |
+| `repo open` | Open the repo in the OS file manager (`--code` for VSCode, `--stree` for Sourcetree) |
 | `status` | Show current repo and linked agents |
-| `scaffold [path]` | Create directories and plugin manifests in a prompt repo |
+| `scaffold [path]` | Create or validate directories and plugin manifests (existing files are preserved) |
 | `uninstall` | Remove all set-prompt data and restore backups |
 
 ## What Gets Created

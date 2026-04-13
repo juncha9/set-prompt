@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process';
 import chalk from 'chalk';
 import { configManager } from '@/_libs/config';
 
-export const updateCommand = (): void => {
+export const repoPullCommand = (): void => {
     const repoPath = configManager.repo_path;
     if (repoPath == null) {
         console.error(chalk.red('❌ No repo installed.'));
@@ -11,11 +11,11 @@ export const updateCommand = (): void => {
     }
 
     if (configManager.remote_url == null) {
-        console.error(chalk.red('❌ No remote URL registered. Cannot update.'));
+        console.error(chalk.red('❌ No remote URL registered. Cannot pull.'));
         return;
     }
 
-    console.log(chalk.green('\nUpdating prompt repo...'));
+    console.log(chalk.green('\nPulling prompt repo...'));
     console.log(chalk.dim(repoPath));
 
     const fetch = spawnSync('git', ['fetch'], { cwd: repoPath, stdio: 'inherit' });
@@ -30,5 +30,5 @@ export const updateCommand = (): void => {
         return;
     }
 
-    console.log(chalk.green('✅ Repo updated.'));
+    console.log(chalk.green('✅ Repo pulled.'));
 };

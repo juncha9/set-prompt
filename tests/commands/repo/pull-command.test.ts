@@ -9,11 +9,11 @@ vi.mock('@/_libs/config', () => ({
     }
 }));
 
-const { updateCommand } = await import('@/commands/update-command');
+const { repoPullCommand } = await import('@/commands/repo/pull-command');
 const { spawnSync } = await import('child_process');
 const { configManager } = await import('@/_libs/config');
 
-describe('updateCommand', () => {
+describe('repoPullCommand', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -22,7 +22,7 @@ describe('updateCommand', () => {
         configManager.repo_path = null;
         configManager.remote_url = 'https://github.com/foo/bar.git';
 
-        updateCommand();
+        repoPullCommand();
 
         expect(spawnSync).not.toHaveBeenCalled();
     });
@@ -31,7 +31,7 @@ describe('updateCommand', () => {
         configManager.repo_path = '/fake/repo';
         configManager.remote_url = null;
 
-        updateCommand();
+        repoPullCommand();
 
         expect(spawnSync).not.toHaveBeenCalled();
     });
@@ -41,7 +41,7 @@ describe('updateCommand', () => {
         configManager.remote_url = 'https://github.com/foo/bar.git';
         vi.mocked(spawnSync).mockReturnValue({ status: 0 } as any);
 
-        updateCommand();
+        repoPullCommand();
 
         expect(spawnSync).toHaveBeenNthCalledWith(1, 'git', ['fetch'], { cwd: '/fake/repo', stdio: 'inherit' });
         expect(spawnSync).toHaveBeenNthCalledWith(2, 'git', ['pull'],  { cwd: '/fake/repo', stdio: 'inherit' });
@@ -52,7 +52,7 @@ describe('updateCommand', () => {
         configManager.remote_url = 'https://github.com/foo/bar.git';
         vi.mocked(spawnSync).mockReturnValue({ status: 1 } as any);
 
-        updateCommand();
+        repoPullCommand();
 
         expect(spawnSync).toHaveBeenCalledTimes(1);
         expect(spawnSync).toHaveBeenCalledWith('git', ['fetch'], expect.anything());
@@ -66,21 +66,21 @@ describe('updateCommand', () => {
             .mockReturnValueOnce({ status: 1 } as any);
 
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-        updateCommand();
+        repoPullCommand();
 
         expect(consoleSpy.mock.calls.flat().join('')).toContain('pull failed');
         consoleSpy.mockRestore();
     });
 
-    it('성공 시 "Repo updated." 출력', () => {
+    it('성공 시 "Repo pulled." 출력', () => {
         configManager.repo_path = '/fake/repo';
         configManager.remote_url = 'https://github.com/foo/bar.git';
         vi.mocked(spawnSync).mockReturnValue({ status: 0 } as any);
 
         const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-        updateCommand();
+        repoPullCommand();
 
-        expect(consoleSpy.mock.calls.flat().join('')).toContain('Repo updated');
+        expect(consoleSpy.mock.calls.flat().join('')).toContain('Repo pulled');
         consoleSpy.mockRestore();
     });
 });

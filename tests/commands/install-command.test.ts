@@ -6,6 +6,7 @@ import os from 'os';
 vi.mock('@inquirer/prompts', () => ({ confirm: vi.fn() }));
 vi.mock('child_process', () => ({ spawnSync: vi.fn() }));
 vi.mock('@/commands/scaffold-command', () => ({ scaffoldCommand: vi.fn() }));
+vi.mock('@/_libs/repo', () => ({ printSaveHint: vi.fn() }));
 vi.mock('@/_libs/config', () => ({
     configManager: {
         repo_path: null,
@@ -18,6 +19,7 @@ const { installCommand } = await import('@/commands/install-command');
 const { confirm } = await import('@inquirer/prompts');
 const { spawnSync } = await import('child_process');
 const { configManager } = await import('@/_libs/config');
+const { printSaveHint } = await import('@/_libs/repo');
 
 const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
     throw new Error('process.exit called');
@@ -101,6 +103,15 @@ describe('installCommand', () => {
         expect(configManager.repo_path).toBeDefined();
         expect(configManager.remote_url).toBe('https://github.com/foo/bar.git');
         expect(configManager.save).toHaveBeenCalled();
+    });
+
+    it('clone 성공 → printSaveHint 호출 (scaffold가 파일을 추가했을 경우 대비)', async () => {
+        vi.mocked(confirm).mockResolvedValue(true);
+        vi.mocked(spawnSync).mockReturnValue({ status: 0 } as any);
+
+        await installCommand('https://github.com/foo/bar.git');
+
+        expect(printSaveHint).toHaveBeenCalledWith(expect.any(String));
     });
 
     it('clone 실패 → process.exit(1)', async () => {

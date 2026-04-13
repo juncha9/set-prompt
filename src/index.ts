@@ -9,7 +9,13 @@ import { linkCommand } from '@/commands/link-command';
 import { uninstallCommand } from '@/commands/uninstall-command';
 import { scaffoldCommand } from '@/commands/scaffold-command';
 import { statusCommand } from '@/commands/status-command';
-import { updateCommand } from '@/commands/update-command';
+import { repoPullCommand } from '@/commands/repo/pull-command';
+import { repoCommitCommand } from '@/commands/repo/commit-command';
+import { repoPushCommand } from '@/commands/repo/push-command';
+import { repoSaveCommand } from '@/commands/repo/save-command';
+import { repoStatusCommand } from '@/commands/repo/status-command';
+import { repoPathCommand } from '@/commands/repo/path-command';
+import { repoOpenCommand } from '@/commands/repo/open-command';
 import { configManager } from '@/_libs/config';
 
 // Graceful exit on Ctrl+C
@@ -41,10 +47,7 @@ program
     .name('set-prompt')
     .description(pkg.description)
     .version(pkg.version)
-    .addHelpText('beforeAll', banner + '\n')
-    .action(() => {
-        program.help();
-    });
+    .addHelpText('beforeAll', ({ command }) => (command === program ? banner + '\n' : ''));
 
 program
     .command('install')
@@ -77,11 +80,96 @@ program
         statusCommand();
     });
 
-program
-    .command('update')
+const repo = program
+    .command('repo')
+    .description(`🗂️  Manage the installed prompt repo ${chalk.dim('(status | pull | commit | push | save | path | open)')}`);
+
+repo
+    .command('status')
+    .description(`📋 Show VCS status of the repo ${chalk.dim('(branch, ahead/behind, changed files)')}`)
+    .addHelpText('after', `
+Example output:
+  📂 ~/.set-prompt/repo
+  🌿 main → origin/main (ahead 2)
+
+  📝 Changes (2):
+     modified   skills/foo.md
+     untracked  draft.md
+`)
+    .action(() => {
+        repoStatusCommand();
+    });
+
+repo
+    .command('pull')
     .description(`🔄 Fetch and pull the latest changes from the ${chalk.cyan('remote repo')}`)
     .action(() => {
-        updateCommand();
+        repoPullCommand();
+    });
+
+repo
+    .command('commit')
+    .description(`📝 Stage all changes and commit ${chalk.dim('(auto-generates message if -m omitted; does not push)')}`)
+    .option('-m, --message <msg>', 'commit message (auto-generated from changed files if omitted)')
+    .addHelpText('after', `
+Examples:
+  $ sppt repo commit -m "edit dbml skill"
+  $ sppt repo commit                          ${chalk.dim('# auto-generates "update N files" + file list')}
+`)
+    .action((opts: { message?: string }) => {
+        repoCommitCommand({ message: opts.message });
+    });
+
+repo
+    .command('push')
+    .description(`⬆️  Push local commits to the remote`)
+    .action(() => {
+        repoPushCommand();
+    });
+
+repo
+    .command('save')
+    .description(`💾 Stage + commit + push in one step ${chalk.dim('(macro for commit → push; auto-generates message if -m omitted)')}`)
+    .option('-m, --message <msg>', 'commit message (auto-generated from changed files if omitted)')
+    .addHelpText('after', `
+Examples:
+  $ sppt repo save -m "edit dbml skill"
+  $ sppt repo save                            ${chalk.dim('# auto-generates message and pushes')}
+
+Equivalent to: sppt repo commit && sppt repo push
+`)
+    .action((opts: { message?: string }) => {
+        repoSaveCommand({ message: opts.message });
+    });
+
+repo
+    .command('path')
+    .description(`📍 Print the repo path to stdout ${chalk.dim('(e.g. cd $(sppt repo path))')}`)
+    .addHelpText('after', `
+Examples:
+  $ sppt repo path
+  ${chalk.dim('/Users/me/.set-prompt/repo')}
+
+  $ cd "$(sppt repo path)"                    ${chalk.dim('# jump into the repo')}
+  $ code "$(sppt repo path)"                  ${chalk.dim('# open in VSCode')}
+`)
+    .action(() => {
+        repoPathCommand();
+    });
+
+repo
+    .command('open')
+    .description(`📂 Open the repo in the OS file manager ${chalk.dim('(--code: VSCode, --stree: Sourcetree)')}`)
+    .option('--code', 'open with VSCode (`code` CLI)')
+    .option('--stree', 'open with Sourcetree (`stree` CLI)')
+    .addHelpText('after', `
+Examples:
+  $ sppt repo open                            ${chalk.dim('# Explorer / Finder / xdg-open')}
+  $ sppt repo open --code                     ${chalk.dim('# open in VSCode')}
+  $ sppt repo open --stree                    ${chalk.dim('# open in Sourcetree')}
+`)
+    .action((opts: { code?: boolean; stree?: boolean }) => {
+        repoOpenCommand({ code: opts.code, stree: opts.stree });
     });
 
 program

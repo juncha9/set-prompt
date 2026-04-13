@@ -5,32 +5,98 @@ import { confirm } from '@inquirer/prompts';
 import { PROMPT_DIR_NAMES, PLUGIN_NAME, TAB } from '@/_defs';
 import { SET_PROMPT_GUIDE } from '@/_libs/templates';
 import { configManager } from '@/_libs/config';
+import { printSaveHint } from '@/_libs/repo';
 
-// ─── 플러그인 매니페스트 생성 함수 ──────────────────────────────────────────
+// ─── 플러그인 매니페스트 함수 ──────────────────────────────────────────
 
-export const ensureClaudePluginManifest = (repoPath: string): void => {
+export type EnsureResult = 'created' | 'valid' | 'invalid';
+
+/** Validates the Claude Code plugin manifest. Returns a list of human-readable issues, or empty when OK. */
+const validateClaudePluginManifest = (data: unknown): string[] => {
+    const issues: string[] = [];
+    if (typeof data !== 'object' || data === null) return ['root must be a JSON object'];
+    const obj = data as Record<string, unknown>;
+    if (typeof obj.name !== 'string' || obj.name.length === 0) {
+        issues.push('"name" is required and must be a non-empty string');
+    }
+    return issues;
+};
+
+/**
+ * Validates the Codex plugin manifest.
+ * `skills`, `mcpServers`, `apps` are pointers Codex uses to load each integration —
+ * they must point at the respective files for set-prompt's Codex integration to work.
+ */
+const validateCodexPluginManifest = (data: unknown): string[] => {
+    const issues: string[] = [];
+    if (typeof data !== 'object' || data === null) return ['root must be a JSON object'];
+    const obj = data as Record<string, unknown>;
+    if (typeof obj.name !== 'string' || obj.name.length === 0) {
+        issues.push('"name" is required and must be a non-empty string');
+    }
+    if (typeof obj.skills !== 'string' || obj.skills.length === 0) {
+        issues.push('"skills" is required and must be a string path (e.g. "./skills/")');
+    }
+    if (typeof obj.mcpServers !== 'string' || obj.mcpServers.length === 0) {
+        issues.push('"mcpServers" is required and must be a string path (e.g. "./.mcp.json")');
+    }
+    if (typeof obj.apps !== 'string' || obj.apps.length === 0) {
+        issues.push('"apps" is required and must be a string path (e.g. "./.app.json")');
+    }
+    return issues;
+};
+
+/**
+ * If the manifest file exists, parses + validates and returns 'valid' / 'invalid' (never overwrites).
+ * Otherwise creates it with `defaultData` and returns 'created'.
+ * Validation issues are printed as warnings; the file is left untouched in either case.
+ */
+const ensureManifest = (
+    jsonPath: string,
+    metaDir: string,
+    validate: (data: unknown) => string[],
+    defaultData: object,
+    label: string,
+): EnsureResult => {
+    if (fs.existsSync(jsonPath)) {
+        try {
+            const parsed = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+            const issues = validate(parsed);
+            if (issues.length === 0) return 'valid';
+            console.warn(chalk.yellow(`  ⚠ ${label} has issues — keeping existing file:`));
+            for (const issue of issues) console.warn(chalk.dim(`     ${issue}`));
+            return 'invalid';
+        } catch (ex: any) {
+            console.warn(chalk.yellow(`  ⚠ ${label} failed to parse: ${ex.message} — keeping existing file`));
+            return 'invalid';
+        }
+    }
+    fs.mkdirSync(metaDir, { recursive: true });
+    fs.writeFileSync(jsonPath, JSON.stringify(defaultData, null, 4), { encoding: 'utf-8' });
+    return 'created';
+};
+
+export const ensureClaudePluginManifest = (repoPath: string): EnsureResult => {
     const metaDir = path.join(repoPath, '.claude-plugin');
     const jsonPath = path.join(metaDir, 'plugin.json');
-    fs.mkdirSync(metaDir, { recursive: true });
-    fs.writeFileSync(jsonPath, JSON.stringify({
+    return ensureManifest(jsonPath, metaDir, validateClaudePluginManifest, {
         name: PLUGIN_NAME,
         version: '1.0.0',
         description: 'Managed by set-prompt',
-    }, null, 4), { encoding: 'utf-8' });
+    }, '.claude-plugin/plugin.json');
 };
 
-export const ensureCodexPluginManifest = (repoPath: string): void => {
+export const ensureCodexPluginManifest = (repoPath: string): EnsureResult => {
     const metaDir = path.join(repoPath, '.codex-plugin');
     const jsonPath = path.join(metaDir, 'plugin.json');
-    fs.mkdirSync(metaDir, { recursive: true });
-    fs.writeFileSync(jsonPath, JSON.stringify({
+    return ensureManifest(jsonPath, metaDir, validateCodexPluginManifest, {
         name: PLUGIN_NAME,
         version: '1.0.0',
         description: 'Managed by set-prompt',
         skills: './skills/',
         mcpServers: './.mcp.json',
         apps: './.app.json',
-    }, null, 4), { encoding: 'utf-8' });
+    }, '.codex-plugin/plugin.json');
 };
 
 // ─── 설정 파일 생성 함수 ─────────────────────────────────────────────────────
@@ -101,17 +167,34 @@ export const scaffoldCommand = async (localPath?: string): Promise<boolean> => {
         }
 
         // ── 4. 플러그인 매니페스트 ──────────────────────────────────────
-        ensureClaudePluginManifest(targetPath);
-        console.log(`${TAB}${chalk.green('✓')} .claude-plugin/plugin.json`);
+        const symFor = (r: EnsureResult): string => (
+            r === 'created' ? chalk.green('+')
+          : r === 'valid'   ? chalk.dim('✓')
+          :                   chalk.yellow('⚠')
+        );
 
-        ensureCodexPluginManifest(targetPath);
-        console.log(`${TAB}${chalk.green('✓')} .codex-plugin/plugin.json`);
+        const claudeResult = ensureClaudePluginManifest(targetPath);
+        console.log(`${TAB}${symFor(claudeResult)} .claude-plugin/plugin.json`);
+
+        const codexResult = ensureCodexPluginManifest(targetPath);
+        console.log(`${TAB}${symFor(codexResult)} .codex-plugin/plugin.json`);
 
         // ── 5. 설정 파일 (.mcp.json, .app.json) ───────────────────────
         console.log(`${TAB}${ensureMcpJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} .mcp.json`);
         console.log(`${TAB}${ensureAppJson(targetPath) ? chalk.green('+') : chalk.dim('✓')} .app.json`);
 
         console.log(chalk.green('\nScaffold complete.'));
+
+        // Show a save hint only when scaffolding the registered repo.
+        // During `install`, this is a no-op because `configManager.repo_path` isn't set
+        // until after `scaffoldCommand` returns — `install` prints its own hint at the end.
+        if (
+            configManager.repo_path != null
+            && path.resolve(targetPath) === path.resolve(configManager.repo_path)
+        ) {
+            printSaveHint(targetPath);
+        }
+
         return true;
     } catch (ex: any) {
         console.error(chalk.red(`Failed to scaffold repo structure: ${ex.message}`), ex);

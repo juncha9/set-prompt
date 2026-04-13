@@ -6,6 +6,7 @@ import { confirm } from '@inquirer/prompts';
 import { HOME_DIR } from '@/_defs';
 import { configManager } from '@/_libs/config';
 import { isGitUrl } from '@/_libs';
+import { printSaveHint } from '@/_libs/repo';
 import { scaffoldCommand } from './scaffold-command';
 
 
@@ -49,7 +50,7 @@ const cloneRepo = async (remoteUrl: string): Promise<boolean> => {
         console.log(chalk.red('  removed') + chalk.dim(` backup → ${backupPath}`));
     }
 
-    await scaffoldCommand(localPath, { force: true });
+    await scaffoldCommand(localPath);
 
     configManager.repo_path  = localPath;
     configManager.remote_url = remoteUrl;
@@ -57,6 +58,10 @@ const cloneRepo = async (remoteUrl: string): Promise<boolean> => {
         console.error(chalk.red('Failed to save config.'));
         return false;
     }
+
+    // Nudge the user to push scaffold-generated files if the clone arrived empty.
+    printSaveHint(localPath);
+
     return true;
 };
 
@@ -78,7 +83,7 @@ export const installCommand = async (target: string): Promise<boolean> => {
         if (configManager.repo_path != null) {
             if (normalizeUrl(configManager.remote_url ?? '') === normalizeUrl(target)) {
                 console.error(chalk.red(`❌ Already installed from the same URL: ${target}`));
-                console.log(chalk.dim('   Use `set-prompt update` to pull the latest changes.'));
+                console.log(chalk.dim('   Use `set-prompt repo pull` to pull the latest changes.'));
                 return false;
             }
             console.warn(chalk.yellow(`⚠ Switching repo: ${configManager.remote_url} → ${target}`));

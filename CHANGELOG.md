@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.6.0] - 2026-04-14
+
+### Added
+- `set-prompt repo status` — VCS status: current branch, upstream + ahead/behind, colored list of changed files (separate from `set-prompt status`, which shows linked agents)
+- `set-prompt repo pull` — git fetch + pull (replaces `set-prompt update`)
+- `set-prompt repo commit [-m <msg>]` — stage all + commit locally; auto-generates a subject+body message when `-m` omitted (subject: `update N files`, body: bullet list of repo-relative paths)
+- `set-prompt repo push` — push local commits to remote
+- `set-prompt repo save [-m <msg>]` — one-step macro: commit + push (also auto-generates message)
+- `set-prompt repo path` — prints the installed repo path to stdout (designed for `cd $(sppt repo path)`); errors go to stderr so piping stays clean
+- `set-prompt repo open` — opens the repo in the OS file manager (`explorer` / `open` / `xdg-open`); `--code` opens in VSCode (`code` CLI), `--stree` opens in Sourcetree (auto-detects `SourceTree.exe` at `%LOCALAPPDATA%\SourceTree` on Windows where the `stree` wrapper isn't shipped)
+
+### Changed
+- `scaffold` and `install`: when the resulting working tree is dirty, print a hint guiding the user to run `sppt repo save`. Non-interactive — the user stays in control (earlier design had auto-prompted to run `save`, which risked failing pushes during `install`).
+- `scaffold`: plugin manifests (`.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`) are no longer overwritten when they already exist. Existing files are validated against required fields (`name` for Claude; `name` + `skills` + `mcpServers` + `apps` for Codex — the latter three are pointers Codex uses to load each integration) and preserved as-is — custom values like `version`, `description`, or non-default `name` survive re-runs. Invalid files trigger a warning but stay untouched (status: `+` created / `✓` valid / `⚠` invalid).
+
+### Changed (Breaking)
+- `set-prompt update` removed. Use `set-prompt repo pull` instead.
+- Rationale: VCS-grouped commands read more clearly and leave room for future operations; `pull` is already the cross-VCS norm (Hg/JJ/Fossil all use it). `commit` and `push` stay pure git semantics; `save` is the convenience macro for the common case. `path` / `open` close the "where is my repo?" UX gap since the default install location (`~/.set-prompt/repo/`) felt distant.
+
+### Migration
+- Replace any `set-prompt update` / `sppt update` calls with `set-prompt repo pull` / `sppt repo pull`
+
+---
+
 ## [0.5.4] - 2026-04-13
 
 ### Changed
