@@ -131,6 +131,8 @@ The interactive mode shows all agents with their current state. **Check to link,
 
 > **Note on Codex**: Operates as a plugin. Restart Codex after linking — you may need to restart **twice** before the plugin is fully recognized.
 
+> **Note on RooCode**: Skill directory names must use hyphens only — `my_skill` (underscore) silently fails to be recognized, while `my-skill` works. Hyphens work on every platform, so default to them.
+
 > **Note on Cursor**: Does not load `rules/` from symlinked directories. Use `.cursor/rules/` within each project instead, or manage rules via Cursor Settings.
 
 > **Note on OpenCode**: Linked at `~/.config/opencode/` — OpenCode's default config directory, so no env var setup required.

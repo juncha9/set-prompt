@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 ### Notes / Caveats
 - **Gemini CLI commands use `.toml`** (not `.md`) — repo's `commands/` needs TOML files for Gemini to recognize them
 - **Gemini CLI agents have strict frontmatter validation** — rejects unknown keys (e.g. `color`, `allowed-tools`, `mode` from other platforms). Allowed keys only: `name`, `description`, `kind`, `tools`, `mcpServers`, `model`, `temperature`, `max_turns`, `timeout_mins`. Warning printed on link completion.
+- **RooCode skill directories must use hyphens, not underscores** — `my_skill` silently fails to register, `my-skill` works. Document-only gotcha (no code change); noted in `SET_PROMPT_GUIDE` skill `name` row.
 
 ---
 
