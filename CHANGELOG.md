@@ -7,14 +7,23 @@ All notable changes to this project will be documented in this file.
 ## [0.7.0] - 2026-04-20
 
 ### Added
-- OpenCode integration (`link opencode`) — dir symlinks into `~/.config/opencode/` (OpenCode's default config directory)
-- `AGENT_PROMPT_DIRS[OPENCODE]` set to `['skills', 'commands', 'agents']` to match OpenCode's supported subdirectories
-- `OpencodeConfigSchema` + `OpencodeConfig` type + `configManager.opencode` getter/setter + `isOpencodeEnabled()`
-- `SET_PROMPT_GUIDE` template: OpenCode frontmatter reference for skills (`name`, `description`, `license`, `compatibility`, `metadata`), commands (`template` required + `agent`/`model`/`subtask`), agents (`mode`, `temperature`, `top_p`, `steps`, `tools`, `permission`, etc.)
-- Tests: `tests/commands/link-opencode.test.ts`
+- **OpenCode integration** (`link opencode`) — dir symlinks into `~/.config/opencode/` (OpenCode's default config directory). Links `skills/`, `commands/`, `agents/`.
+- **Gemini CLI integration** (`link geminicli`) — dir symlinks into `~/.gemini/` (coexists with Antigravity's `~/.gemini/antigravity/` subtree). Links `skills/`, `commands/`, `agents/`.
+- `OpencodeConfigSchema` / `GeminicliConfigSchema` + types + `configManager.opencode` / `configManager.geminicli` getter/setter + `isOpencodeEnabled()` / `isGeminicliEnabled()`
+- `SET_PROMPT_GUIDE` template: OpenCode frontmatter reference — skills (`name`, `description`, `license`, `compatibility`, `metadata`), commands (`template` required + `agent`/`model`/`subtask`), agents (`mode`, `temperature`, `top_p`, `steps`, `tools`, `permission`, `prompt` with `{file:...}` reference, etc.)
+- `SET_PROMPT_GUIDE` template: Gemini CLI frontmatter reference — skills (`name` + `description` — minimal), agents (`kind`, `tools` as array, `model`, `temperature` 0–2.0, `max_turns`, `timeout_mins`, `mcpServers` as nested YAML map), and a dedicated TOML sample for Gemini CLI commands (`prompt` required + `description`) with `{{args}}`/`!{cmd}`/`@{path}` placeholders and namespaced subdirectory support (`/git:commit`)
+- Tests: `tests/commands/link-opencode.test.ts`, `tests/commands/link-geminicli.test.ts`
+- README hero rewrite with `One repo. Every AI coding tool. Always in sync.` tagline, npm/GitHub/Sponsor badges, Quick Start section
+- `engines.node >=18` declared in `package.json`
 
 ### Changed
-- `link-command.ts`: `LINK_MAP` / `UNLINK_MAP` / `prevLinked` extended with OpenCode entry
+- `link-command.ts`: `LINK_MAP` / `UNLINK_MAP` / `prevLinked` extended with OpenCode and Gemini CLI entries
+- `checkbox` prompt UX: added `loop: false` and `pageSize: ALL_AGENTS.length` so the agent list no longer wraps around and shows all options without scrolling
+- Removed Contributing section from README (not accepting external PRs yet)
+
+### Notes / Caveats
+- **Gemini CLI commands use `.toml`** (not `.md`) — repo's `commands/` needs TOML files for Gemini to recognize them
+- **Gemini CLI agents have strict frontmatter validation** — rejects unknown keys (e.g. `color`, `allowed-tools`, `mode` from other platforms). Allowed keys only: `name`, `description`, `kind`, `tools`, `mcpServers`, `model`, `temperature`, `max_turns`, `timeout_mins`. Warning printed on link completion.
 
 ---
 

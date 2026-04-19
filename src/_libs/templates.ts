@@ -16,7 +16,7 @@ This is a shared prompt repository linked to various AI agents via \`set-prompt 
 │       ├── COMMAND.md     # Platform-specific frontmatter + prompt content
 │       └── ...            # Supporting files
 ├── hooks/                 # Lifecycle shell hooks (Claude Code)
-├── agents/                # Agent definitions (Claude Code, Cursor, OpenCode)
+├── agents/                # Agent definitions (Claude Code, Cursor, OpenCode, Gemini CLI)
 │   └── <agent-name>/
 │       └── AGENT.md
 ├── rules/                 # Rule definitions (Cursor)
@@ -123,13 +123,19 @@ license: "MIT"
 compatibility: "opencode"
 metadata:
   audience: "maintainers"
+
+# Gemini CLI
+name: my-skill
+description: "What this skill does and when Gemini should use it"
 ---
 \`\`\`
 
+> **Gemini CLI note**: Only \`name\` and \`description\` are recognized. \`name\` must be lowercase with hyphens and match the directory name.
+
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
-| \`name\` | Yes | All | Display name. Claude Code / OpenCode: lowercase, numbers, hyphens only (max 64 chars). RooCode: emoji allowed. Antigravity: optional, defaults to folder name. |
-| \`description\` | Yes | All | What it does and when to use it. Claude / OpenCode uses this to decide auto-loading. |
+| \`name\` | Yes | All | Display name. Claude Code / OpenCode / RooCode: lowercase, numbers, hyphens only (no underscores; Claude Code / OpenCode limit to 64 chars). Gemini CLI: lowercase with hyphens, must match the directory name. Antigravity: optional, defaults to folder name. |
+| \`description\` | Yes | All | What it does and when to use it. Claude / OpenCode / Gemini CLI uses this to decide auto-loading. OpenCode limits to 1–1024 chars. |
 | \`allowed-tools\` | No | Claude Code | Tools Claude can use without asking. e.g. \`Read\` \`Write\` \`Edit\` \`Bash\` \`Grep\` \`Glob\` |
 | \`model\` | No | Claude Code | Model to use when active. \`sonnet\` or \`haiku\` |
 | \`context\` | No | Claude Code | \`fork\` = run in a forked subagent context |
@@ -199,6 +205,29 @@ subtask: false
 
 > **OpenCode note**: \`template\` is required in the frontmatter — it's the prompt sent to the LLM when the command runs. The markdown body is ignored. Placeholders: \`$ARGUMENTS\`, \`$1\`/\`$2\`/\`$3\`, \`\` !\`cmd\` \`\` (bash output), \`@path\` (file contents).
 
+#### Gemini CLI commands (TOML, not Markdown)
+
+Gemini CLI reads \`.toml\` files — not \`.md\`. The entire command is a TOML file with two top-level keys:
+
+\`\`\`toml
+# ~/.gemini/commands/refactor/pure.toml    →    /refactor:pure
+description = "Refactor current context into a pure function."
+prompt = """
+Please analyze the code provided.
+Refactor it into a pure function.
+Include: 1) Refactored code. 2) Explanation of changes.
+"""
+\`\`\`
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| \`prompt\` | Yes | Single or multi-line prompt sent to Gemini. |
+| \`description\` | No | One-line description shown in \`/help\` menu. Auto-generated from prompt if omitted. |
+
+**Placeholders inside the prompt**: \`{{args}}\` (user input, shell-escaped inside \`!{...}\`), \`!{cmd}\` (shell output injection, asks for confirmation), \`@{path}\` (file/dir content injection, supports images/PDFs). If \`{{args}}\` is absent, the user's text is appended to the prompt end.
+
+**Namespacing**: subdirectories create namespaced commands — \`commands/git/commit.toml\` becomes \`/git:commit\`. After edits, run \`/commands reload\` in Gemini CLI.
+
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
 | \`name\` | No | All | Display name — lowercase, numbers, hyphens only (max 64 chars). Defaults to directory name. |
@@ -249,6 +278,7 @@ steps: 20
 color: "#FF5733"
 hidden: false
 disable: false
+prompt: "{file:./prompts/review.txt}"
 tools:
   write: false
   edit: false
@@ -258,29 +288,58 @@ permission:
   bash:
     "*": ask
     "git diff": allow
+  webfetch: deny
+
+# Gemini CLI
+name: security-auditor
+description: "Specialized in finding security vulnerabilities in code."
+kind: local
+tools:
+  - read_file
+  - grep_search
+model: gemini-3-flash-preview
+temperature: 0.2
+max_turns: 10
+timeout_mins: 15
+mcpServers:
+  my-custom-server:
+    command: 'node'
+    args: ['path/to/server.js']
 ---
 \`\`\`
 
 > **OpenCode note**: The filename (without \`.md\`) becomes the agent ID. \`name\` is **not** a frontmatter field — don't include it.
 
+> **⚠ Gemini CLI note (strict validation)**: Gemini CLI **rejects any unknown frontmatter key** and fails to load the agent with an error like:
+> \`\`\`
+> Agent loading error: ... Validation failed:
+> Unrecognized key(s) in object: 'color', 'skills'
+> \`\`\`
+> Only these keys are allowed: \`name\`, \`description\`, \`kind\`, \`tools\`, \`mcpServers\`, \`model\`, \`temperature\`, \`max_turns\`, \`timeout_mins\`. Fields from other platforms (\`allowed-tools\`, \`mode\`, \`context\`, \`color\`, \`readonly\`, \`is_background\`, etc.) **must not appear** in an agent file if you want Gemini CLI to load it. If you need platform-specific agents, keep them in separate \`.md\` files per agent.
+
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
-| \`name\` | Yes | Claude Code, Cursor | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). Cursor: defaults to folder name. OpenCode uses the filename instead. |
+| \`name\` | Yes | Claude Code, Cursor, Gemini CLI | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). Cursor: defaults to folder name. OpenCode uses the filename instead. Gemini CLI uses \`name\` as the tool slug. |
 | \`description\` | Yes | All | When and how to use this agent. Used to decide when to spawn/delegate. |
 | \`allowed-tools\` | No | Claude Code | Tools this agent can use without asking |
-| \`model\` | No | All | Claude Code: \`sonnet\` or \`haiku\`. Cursor: \`fast\`, \`inherit\`, or a specific model ID. OpenCode: \`provider/model-id\`. |
+| \`tools\` | No | OpenCode, Gemini CLI | OpenCode: per-tool enable/disable map with wildcards. Gemini CLI: array of tool names the agent can use (e.g. \`[read_file, grep_search]\`). |
+| \`model\` | No | All | Claude Code: \`sonnet\` or \`haiku\`. Cursor: \`fast\`, \`inherit\`, or a specific model ID. OpenCode: \`provider/model-id\`. Gemini CLI: specific Gemini model override. |
 | \`context\` | No | Claude Code | \`fork\` = run in isolated subagent context |
 | \`readonly\` | No | Cursor | \`true\` = sub-agent runs with restricted write permissions (no file edits or state-changing shell commands). (default: \`false\`) |
 | \`is_background\` | No | Cursor | \`true\` = sub-agent runs in background without blocking parent. (default: \`false\`) |
 | \`mode\` | No | OpenCode | \`primary\`, \`subagent\`, or \`all\`. (default: \`all\`) |
-| \`temperature\` | No | OpenCode | Response randomness, \`0.0\`–\`1.0\`. |
+| \`temperature\` | No | OpenCode, Gemini CLI | Response randomness. OpenCode: \`0.0\`–\`1.0\`. Gemini CLI: \`0.0\`–\`2.0\`. |
 | \`top_p\` | No | OpenCode | Alternative diversity control, \`0.0\`–\`1.0\`. |
 | \`steps\` | No | OpenCode | Max agentic iterations before forcing a text response. |
 | \`disable\` | No | OpenCode | \`true\` = disable the agent. (default: \`false\`) |
 | \`hidden\` | No | OpenCode | \`true\` = hide from \`@\` autocomplete. Subagents only. (default: \`false\`) |
 | \`color\` | No | OpenCode | Hex color (e.g. \`#FF5733\`) or theme color. |
-| \`tools\` | No | OpenCode | Per-tool enable/disable map. Supports wildcards. e.g. \`{write: false, edit: false}\` |
-| \`permission\` | No | OpenCode | Controls \`edit\`, \`bash\`, \`webfetch\`, \`task\` access. Values: \`allow\`, \`ask\`, \`deny\`. |
+| \`prompt\` | No | OpenCode | Custom system prompt source. Supports file references like \`{file:./prompts/review.txt}\`. |
+| \`permission\` | No | OpenCode | Fine-grained action permissions. Values: \`allow\`, \`ask\`, \`deny\`. Applies to \`edit\`, \`bash\` (supports per-command globs like \`"git diff": allow\`), \`webfetch\`, \`task\`. |
+| \`kind\` | No | Gemini CLI | \`local\` or \`remote\`. (default: \`local\`) |
+| \`max_turns\` | No | Gemini CLI | Conversation turn limit. (default: \`30\`) |
+| \`timeout_mins\` | No | Gemini CLI | Execution time limit in minutes. (default: \`10\`) |
+| \`mcpServers\` | No | Gemini CLI | Inline MCP server configuration. Each server is a nested YAML map with \`command\` and \`args\` keys — define MCP servers unique to this agent (not from the global registry). |
 
 ---
 

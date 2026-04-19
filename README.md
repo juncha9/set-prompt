@@ -28,7 +28,7 @@ Your skills, commands, and agents live in git. One command syncs them into every
         ▼                  ▼                       ▼
   Claude Code          Codex                  RooCode, OpenClaw,
   (marketplace +       (marketplace +         Antigravity, Cursor,
-   repo symlink)        cache symlink)        OpenCode
+   repo symlink)        cache symlink)        OpenCode, Gemini CLI
                                               (dir symlinks)
 ```
 
@@ -111,6 +111,7 @@ set-prompt link codex        # link Codex only
 set-prompt link antigravity  # link Antigravity only
 set-prompt link cursor       # link Cursor only
 set-prompt link opencode     # link OpenCode only
+set-prompt link geminicli    # link Gemini CLI only
 ```
 
 The interactive mode shows all agents with their current state. **Check to link, uncheck to unlink** — existing directories are backed up before being replaced.
@@ -124,12 +125,17 @@ The interactive mode shows all agents with their current state. **Check to link,
 | Antigravity | dir symlinks into `~/.gemini/antigravity/` | `skills/` |
 | Cursor | dir symlinks into `~/.cursor/` | `skills/`, `agents/`, `commands/`, `hooks/`, `mcp.json` (hardlink) |
 | OpenCode | dir symlinks into `~/.config/opencode/` | `skills/`, `commands/`, `agents/` |
+| Gemini CLI | dir symlinks into `~/.gemini/` | `skills/`, `commands/`, `agents/` |
 
 > **Note on Claude Code**: Operates as a plugin. Restart Claude Code after linking for the plugin to be recognized.
 
 > **Note on Codex**: Operates as a plugin. Restart Codex after linking — you may need to restart **twice** before the plugin is fully recognized.
 
 > **Note on Cursor**: Does not load `rules/` from symlinked directories. Use `.cursor/rules/` within each project instead, or manage rules via Cursor Settings.
+
+> **Note on OpenCode**: Linked at `~/.config/opencode/` — OpenCode's default config directory, so no env var setup required.
+
+> **Note on Gemini CLI**: Skills follow the standard `skills/<name>/SKILL.md` pattern. Commands use `.toml` format (not `.md`) and agents use `.md` with YAML frontmatter. Files in your repo's `commands/` must be TOML for Gemini CLI to recognize them. **Agents have strict frontmatter validation** — unknown keys (e.g. `allowed-tools`, `color`, `mode` from other platforms) cause Gemini CLI to reject the agent. See `SET_PROMPT_GUIDE.md` for the allowed keys.
 
 ---
 
@@ -153,7 +159,7 @@ set-prompt repo path                  # print repo location (e.g. cd "$(sppt rep
 set-prompt repo open                  # open repo in OS file manager (--code VSCode, --stree Sourcetree)
 ```
 
-Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity, OpenCode) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
+Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity, OpenCode, Gemini CLI) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
 
 ---
 
@@ -234,6 +240,13 @@ set-prompt uninstall
 ├── skills/ → repo/skills
 ├── commands/ → repo/commands
 └── agents/ → repo/agents
+
+~/.gemini/                   # Gemini CLI (dir symlinks)
+├── SET_PROMPT_BACKUP/
+├── skills/ → repo/skills       (Gemini reads SKILL.md)
+├── commands/ → repo/commands   (Gemini reads *.toml)
+├── agents/ → repo/agents       (Gemini reads *.md)
+└── antigravity/                (Antigravity's own subtree, unrelated)
 ```
 
 ## Warning
@@ -247,6 +260,7 @@ set-prompt uninstall
 - **Antigravity** — replaces directories in `~/.gemini/antigravity/`
 - **Cursor** — replaces directories and `mcp.json` in `~/.cursor/`
 - **OpenCode** — replaces directories in `~/.config/opencode/`
+- **Gemini CLI** — replaces directories in `~/.gemini/` (`antigravity/` subtree untouched)
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 

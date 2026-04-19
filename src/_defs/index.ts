@@ -21,6 +21,8 @@ export const CODEX_BACKUP_DIR = path.join(CODEX_DIR, 'SET_PROMPT_BACKUP');
 export const CURSOR_DIR = path.join(os.homedir(), '.cursor');
 export const OPENCODE_DIR = path.join(os.homedir(), '.config', 'opencode');
 export const OPENCODE_BACKUP_DIR = path.join(OPENCODE_DIR, 'SET_PROMPT_BACKUP');
+export const GEMINICLI_DIR = path.join(os.homedir(), '.gemini');
+export const GEMINICLI_BACKUP_DIR = path.join(GEMINICLI_DIR, 'SET_PROMPT_BACKUP');
 
 export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks', 'agents', 'rules'] as const;
 
@@ -32,6 +34,7 @@ export enum TOOLS {
     ANTIGRAVITY  = 'antigravity',
     CURSOR       = 'cursor',
     OPENCODE     = 'opencode',
+    GEMINICLI    = 'geminicli',
 }
 
 export type AgentId = TOOLS;
@@ -44,6 +47,7 @@ export const AGENT_PROMPT_DIRS: Record<TOOLS, readonly string[]> = {
     [TOOLS.ANTIGRAVITY]: ['skills'],
     [TOOLS.CURSOR]:      ['skills', 'agents', 'commands', 'hooks'],
     [TOOLS.OPENCODE]:    ['skills', 'commands', 'agents'],
+    [TOOLS.GEMINICLI]:   ['skills', 'commands', 'agents'],
 };
 
 export const ALL_AGENTS = [
@@ -54,4 +58,5 @@ export const ALL_AGENTS = [
     { name: 'Antigravity',  value: TOOLS.ANTIGRAVITY },
     { name: 'Cursor',       value: TOOLS.CURSOR },
     { name: 'OpenCode',     value: TOOLS.OPENCODE },
+    { name: 'Gemini CLI',   value: TOOLS.GEMINICLI },
 ] as const;

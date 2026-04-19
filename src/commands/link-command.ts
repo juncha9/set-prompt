@@ -9,6 +9,7 @@ import { linkAntigravity, unlinkAntigravity } from '@/link/antigravity';
 import { linkCodex, unlinkCodex } from '@/link/codex';
 import { linkCursor, unlinkCursor } from '@/link/cursor';
 import { linkOpencode, unlinkOpencode } from '@/link/opencode';
+import { linkGeminicli, unlinkGeminicli } from '@/link/geminicli';
 
 export { linkClaudeCode, unlinkClaudeCode } from '@/link/claudecode';
 export { linkRooCode, unlinkRooCode } from '@/link/roocode';
@@ -17,6 +18,7 @@ export { linkAntigravity, unlinkAntigravity } from '@/link/antigravity';
 export { linkCodex, unlinkCodex } from '@/link/codex';
 export { linkCursor, unlinkCursor } from '@/link/cursor';
 export { linkOpencode, unlinkOpencode } from '@/link/opencode';
+export { linkGeminicli, unlinkGeminicli } from '@/link/geminicli';
 
 const LINK_MAP: Record<string, () => Promise<void>> = {
     [TOOLS.CLAUDECODE]:  linkClaudeCode,
@@ -26,6 +28,7 @@ const LINK_MAP: Record<string, () => Promise<void>> = {
     [TOOLS.ANTIGRAVITY]: linkAntigravity,
     [TOOLS.CURSOR]:      linkCursor,
     [TOOLS.OPENCODE]:    linkOpencode,
+    [TOOLS.GEMINICLI]:   linkGeminicli,
 };
 
 const UNLINK_MAP: Record<string, (force: boolean) => Promise<void>> = {
@@ -36,6 +39,7 @@ const UNLINK_MAP: Record<string, (force: boolean) => Promise<void>> = {
     [TOOLS.ANTIGRAVITY]: unlinkAntigravity,
     [TOOLS.CURSOR]:      unlinkCursor,
     [TOOLS.OPENCODE]:    unlinkOpencode,
+    [TOOLS.GEMINICLI]:   unlinkGeminicli,
 };
 
 export const linkCommand = async (tool?: string): Promise<void> => {
@@ -57,6 +61,7 @@ export const linkCommand = async (tool?: string): Promise<void> => {
         [TOOLS.ANTIGRAVITY]: configManager.isAntigravityEnabled(),
         [TOOLS.CURSOR]:      configManager.isCursorEnabled(),
         [TOOLS.OPENCODE]:    configManager.isOpencodeEnabled(),
+        [TOOLS.GEMINICLI]:   configManager.isGeminicliEnabled(),
     };
 
     const selected = await checkbox({
@@ -66,6 +71,8 @@ export const linkCommand = async (tool?: string): Promise<void> => {
             value: a.value,
             checked: prevLinked[a.value],
         })),
+        pageSize: ALL_AGENTS.length,
+        loop: false,
     });
 
     const toLink   = ALL_AGENTS.filter(a => !prevLinked[a.value] &&  selected.includes(a.value));

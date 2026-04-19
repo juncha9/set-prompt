@@ -2,7 +2,7 @@ import fs from 'fs';
 import chalk from 'chalk';
 import { HOME_DIR, CONFIG_PATH, TAB } from '@/_defs';
 import { GlobalConfigSchema } from '@/_types';
-import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig, CodexConfig, AntigravityConfig, CursorConfig, OpencodeConfig } from '@/_types';
+import type { GlobalConfig, ClaudeCodeConfig, RoocodeConfig, OpenclawConfig, CodexConfig, AntigravityConfig, CursorConfig, OpencodeConfig, GeminicliConfig } from '@/_types';
 export { HOME_DIR as GLOBAL_CONFIG_DIR, CONFIG_PATH as GLOBAL_CONFIG_PATH };
 
 class ConfigManager {
@@ -15,6 +15,7 @@ class ConfigManager {
     private _antigravity:  AntigravityConfig | null = null;
     private _cursor:       CursorConfig | null = null;
     private _opencode:     OpencodeConfig | null = null;
+    private _geminicli:    GeminicliConfig | null = null;
 
     get repo_path()   { return this._repo_path; }
     get remote_url()  { return this._remote_url; }
@@ -25,6 +26,7 @@ class ConfigManager {
     get antigravity() { return this._antigravity; }
     get cursor()      { return this._cursor; }
     get opencode()    { return this._opencode; }
+    get geminicli()   { return this._geminicli; }
 
     set repo_path(v: string | null)              { this._repo_path    = v; }
     set remote_url(v: string | null)             { this._remote_url   = v; }
@@ -35,6 +37,7 @@ class ConfigManager {
     set antigravity(v: AntigravityConfig | null) { this._antigravity  = v; }
     set cursor(v: CursorConfig | null)           { this._cursor       = v; }
     set opencode(v: OpencodeConfig | null)       { this._opencode     = v; }
+    set geminicli(v: GeminicliConfig | null)     { this._geminicli    = v; }
 
     init(): void {
         this._loadFromDisk();
@@ -61,6 +64,7 @@ class ConfigManager {
                 antigravity: this._antigravity,
                 cursor:      this._cursor,
                 opencode:    this._opencode,
+                geminicli:   this._geminicli,
             }, null, 4);
             fs.writeFileSync(CONFIG_PATH, configStr, 'utf-8');
 
@@ -91,6 +95,7 @@ class ConfigManager {
     isAntigravityEnabled(): boolean { return this._antigravity  != null; }
     isCursorEnabled(): boolean      { return this._cursor       != null; }
     isOpencodeEnabled(): boolean    { return this._opencode     != null; }
+    isGeminicliEnabled(): boolean   { return this._geminicli    != null; }
 
     private _assign(config: GlobalConfig): void {
         this._repo_path   = config.repo_path;
@@ -102,6 +107,7 @@ class ConfigManager {
         this._antigravity = config.antigravity ?? null;
         this._cursor      = config.cursor ?? null;
         this._opencode    = config.opencode ?? null;
+        this._geminicli   = config.geminicli ?? null;
     }
 
     private _loadFromDisk(): void {
@@ -135,6 +141,7 @@ export const getConfig = (): GlobalConfig | null => {
         antigravity: configManager.antigravity,
         cursor:      configManager.cursor,
         opencode:    configManager.opencode,
+        geminicli:   configManager.geminicli,
     };
 };
 export const setConfig = (config: GlobalConfig): boolean => {
@@ -147,6 +154,7 @@ export const setConfig = (config: GlobalConfig): boolean => {
     configManager.antigravity = config.antigravity ?? null;
     configManager.cursor      = config.cursor ?? null;
     configManager.opencode    = config.opencode ?? null;
+    configManager.geminicli   = config.geminicli ?? null;
     return configManager.save();
 };
 export const isConfigExists = (): boolean => configManager.exists();

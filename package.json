@@ -29,7 +29,8 @@
         "openclaw",
         "cursor",
         "codex",
-        "opencode"
+        "opencode",
+        "gemini-cli"
     ],
     "author": "juncha9 (https://github.com/juncha9)",
     "license": "MIT",
