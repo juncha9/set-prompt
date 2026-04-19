@@ -3,9 +3,8 @@
 .vscode/
 
 node_modules/
-tests/
-
 [Ss]rc/
+[Tt]ests/
 tsconfig*.json
 tsup*.config.ts
 vitest.config.ts
