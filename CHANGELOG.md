@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.7.1] - 2026-04-20
+
+### Changed
+- README hero: replaced ASCII structure diagram with hand-drawn architecture image (`docs/imgs/architecture.png`), loaded via GitHub raw URL so it renders on both GitHub and npmjs.com
+- Added `docs/` directory for documentation assets (`docs/imgs/` for images); excluded from npm package via `.npmignore`
+
+---
+
 ## [0.7.0] - 2026-04-20
 
 ### Added

@@ -12,25 +12,7 @@
 
 Your skills, commands, and agents live in git. One command syncs them into every AI coding tool you use — so the prompts you built stay with you no matter which tool you're in.
 
-```
-                    repo/ (git)
-                    ├── skills/
-                    ├── commands/
-                    ├── hooks/
-                    ├── agents/
-                    ├── rules/
-                    ├── .mcp.json
-                    ├── .app.json
-                    ├── .claude-plugin/plugin.json
-                    └── .codex-plugin/plugin.json
-                           │
-        ┌──────────────────┼──────────────────────┐
-        ▼                  ▼                       ▼
-  Claude Code          Codex                  RooCode, OpenClaw,
-  (marketplace +       (marketplace +         Antigravity, Cursor,
-   repo symlink)        cache symlink)        OpenCode, Gemini CLI
-                                              (dir symlinks)
-```
+![set-prompt architecture](https://raw.githubusercontent.com/juncha9/set-prompt/main/docs/imgs/architecture.png)
 
 ## Quick Start
 

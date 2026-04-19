@@ -16,3 +16,4 @@ coverage/
 !.env.example
 
 CLAUDE.md
+docs/
