@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "description": "Sync your prompt library across AI coding tools from a single git repo",
     "main": "dist/index.js",
     "bin": {
@@ -8,6 +8,9 @@
         "sppt": "./dist/index.js"
     },
     "type": "module",
+    "engines": {
+        "node": ">=18"
+    },
     "scripts": {
         "start:dev": "tsx src/index.ts",
         "build": "rimraf dist && tsup",
@@ -25,7 +28,8 @@
         "antigravity",
         "openclaw",
         "cursor",
-        "codex"
+        "codex",
+        "opencode"
     ],
     "author": "juncha9 (https://github.com/juncha9)",
     "license": "MIT",

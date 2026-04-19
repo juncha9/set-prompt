@@ -1,12 +1,16 @@
 # Set Prompt
 
-As you work with AI agents, you build up your own prompt set — skills, commands, and workflows tailored to how you work.
+[![npm version](https://img.shields.io/npm/v/set-prompt?color=cb3837&logo=npm)](https://www.npmjs.com/package/set-prompt)
+[![npm downloads](https://img.shields.io/npm/dm/set-prompt?color=informational)](https://www.npmjs.com/package/set-prompt)
+[![GitHub stars](https://img.shields.io/github/stars/juncha9/set-prompt?color=f5d90a&logo=github)](https://github.com/juncha9/set-prompt/stargazers)
+[![last commit](https://img.shields.io/github/last-commit/juncha9/set-prompt?color=blueviolet&logo=github)](https://github.com/juncha9/set-prompt/commits/main)
+[![license](https://img.shields.io/npm/l/set-prompt?color=green)](./LICENSE.md)
+[![node](https://img.shields.io/node/v/set-prompt?color=success&logo=node.js)](https://nodejs.org)
+[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github-sponsors)](https://github.com/sponsors/juncha9)
 
-But every time you try a new AI agent, you have to set it all up again from scratch. And as your prompts evolve, keeping them in sync across multiple tools becomes a maintenance burden that the tools themselves don't help with.
+### One repo. Every AI coding tool. Always in sync.
 
-`set-prompt` was built to solve this. It maintains a single git repository of prompts and links them into each tool's expected location — so your prompt set stays in one place, stays versioned, and stays consistent across every AI agent you use.
-
-One repo. Every agent. Always in sync.
+Your skills, commands, and agents live in git. One command syncs them into every AI coding tool you use — so the prompts you built stay with you no matter which tool you're in.
 
 ```
                     repo/ (git)
@@ -23,21 +27,34 @@ One repo. Every agent. Always in sync.
         ┌──────────────────┼──────────────────────┐
         ▼                  ▼                       ▼
   Claude Code          Codex                  RooCode, OpenClaw,
-  (marketplace +       (marketplace +         Antigravity, Cursor
-   repo symlink)        cache symlink)        (dir symlinks)
+  (marketplace +       (marketplace +         Antigravity, Cursor,
+   repo symlink)        cache symlink)        OpenCode
+                                              (dir symlinks)
 ```
+
+## Quick Start
+
+From zero to linked in under a minute:
+
+```bash
+npm install -g set-prompt
+sppt install https://github.com/you/my-prompts   # or: sppt scaffold .
+sppt link                                        # interactive checkbox — pick your tools
+```
+
+That's it. Your prompts are now live in every AI tool you selected.
 
 ## Installation
 
 ```bash
+# global install (recommended)
 npm install -g set-prompt
-# or use without installing
+
+# one-off run without installing
 npx set-prompt <command>
 ```
 
-## CLI Alias
-
-`sppt` is a built-in short alias for `set-prompt` — all commands work with either name:
+Both `set-prompt` and the short alias `sppt` are registered — use whichever you prefer:
 
 ```bash
 sppt install <url>        # connect an existing repo
@@ -93,6 +110,7 @@ set-prompt link openclaw     # link OpenClaw only
 set-prompt link codex        # link Codex only
 set-prompt link antigravity  # link Antigravity only
 set-prompt link cursor       # link Cursor only
+set-prompt link opencode     # link OpenCode only
 ```
 
 The interactive mode shows all agents with their current state. **Check to link, uncheck to unlink** — existing directories are backed up before being replaced.
@@ -105,6 +123,7 @@ The interactive mode shows all agents with their current state. **Check to link,
 | OpenClaw | dir symlinks into `~/.openclaw/workspace/` | `skills/` |
 | Antigravity | dir symlinks into `~/.gemini/antigravity/` | `skills/` |
 | Cursor | dir symlinks into `~/.cursor/` | `skills/`, `agents/`, `commands/`, `hooks/`, `mcp.json` (hardlink) |
+| OpenCode | dir symlinks into `~/.config/opencode/` | `skills/`, `commands/`, `agents/` |
 
 > **Note on Claude Code**: Operates as a plugin. Restart Claude Code after linking for the plugin to be recognized.
 
@@ -134,7 +153,7 @@ set-prompt repo path                  # print repo location (e.g. cd "$(sppt rep
 set-prompt repo open                  # open repo in OS file manager (--code VSCode, --stree Sourcetree)
 ```
 
-Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
+Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity, OpenCode) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
 
 ---
 
@@ -209,6 +228,12 @@ set-prompt uninstall
 ├── commands/ → repo/commands
 ├── hooks/ → repo/hooks
 └── mcp.json ⇔ repo/.mcp.json  (hardlink)
+
+~/.config/opencode/          # OpenCode (dir symlinks)
+├── SET_PROMPT_BACKUP/
+├── skills/ → repo/skills
+├── commands/ → repo/commands
+└── agents/ → repo/agents
 ```
 
 ## Warning
@@ -221,6 +246,7 @@ set-prompt uninstall
 - **OpenClaw** — replaces directories in `~/.openclaw/workspace/`
 - **Antigravity** — replaces directories in `~/.gemini/antigravity/`
 - **Cursor** — replaces directories and `mcp.json` in `~/.cursor/`
+- **OpenCode** — replaces directories in `~/.config/opencode/`
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 
@@ -242,9 +268,7 @@ Use `set-prompt uninstall` to cleanly revert all changes.
 - Star this repo
 - Report bugs — open an [issue](https://github.com/juncha9/set-prompt/issues) with steps to reproduce
 - Request features — share ideas via [issues](https://github.com/juncha9/set-prompt/issues)
-- Submit a PR — new agent integrations are welcome
-
-[![Sponsor](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github-sponsors)](https://github.com/sponsors/juncha9)
+- [Sponsor on GitHub](https://github.com/sponsors/juncha9) if the project saves you time
 
 ## Dev Commands
 
@@ -255,13 +279,6 @@ npm link                         # Register as global CLI
 npm unlink -g set-prompt         # Remove global CLI
 npm test                         # Run tests with vitest
 ```
-
-## Contributing
-
-> Contribution guidelines are still being figured out. For now, feel free to open an issue to discuss ideas or report bugs.
-
-- Bug reports and feature requests → [GitHub Issues](https://github.com/juncha9/set-prompt/issues)
-- PRs for new agent integrations are especially appreciated
 
 ## License
 

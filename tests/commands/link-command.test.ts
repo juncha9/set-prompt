@@ -33,6 +33,7 @@ vi.mock('@/_libs/config', () => ({
         codex: null,
         antigravity: null,
         cursor: null,
+        opencode: null,
         save: vi.fn(),
         isClaudeCodeEnabled: vi.fn().mockReturnValue(false),
         isRooCodeEnabled: vi.fn().mockReturnValue(false),
@@ -40,6 +41,7 @@ vi.mock('@/_libs/config', () => ({
         isCodexEnabled: vi.fn().mockReturnValue(false),
         isAntigravityEnabled: vi.fn().mockReturnValue(false),
         isCursorEnabled: vi.fn().mockReturnValue(false),
+        isOpencodeEnabled: vi.fn().mockReturnValue(false),
     }
 }));
 
@@ -64,6 +66,7 @@ describe('linkCommand (interactive)', () => {
         vi.mocked(configManager.isCodexEnabled).mockReturnValue(false);
         vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(false);
         vi.mocked(configManager.isCursorEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isOpencodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.save).mockReturnValue(true);
         vi.mocked(pathExists).mockResolvedValue(false);
     });

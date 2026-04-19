@@ -8,6 +8,7 @@ import { linkOpenclaw, unlinkOpenclaw } from '@/link/openclaw';
 import { linkAntigravity, unlinkAntigravity } from '@/link/antigravity';
 import { linkCodex, unlinkCodex } from '@/link/codex';
 import { linkCursor, unlinkCursor } from '@/link/cursor';
+import { linkOpencode, unlinkOpencode } from '@/link/opencode';
 
 export { linkClaudeCode, unlinkClaudeCode } from '@/link/claudecode';
 export { linkRooCode, unlinkRooCode } from '@/link/roocode';
@@ -15,6 +16,7 @@ export { linkOpenclaw, unlinkOpenclaw } from '@/link/openclaw';
 export { linkAntigravity, unlinkAntigravity } from '@/link/antigravity';
 export { linkCodex, unlinkCodex } from '@/link/codex';
 export { linkCursor, unlinkCursor } from '@/link/cursor';
+export { linkOpencode, unlinkOpencode } from '@/link/opencode';
 
 const LINK_MAP: Record<string, () => Promise<void>> = {
     [TOOLS.CLAUDECODE]:  linkClaudeCode,
@@ -23,6 +25,7 @@ const LINK_MAP: Record<string, () => Promise<void>> = {
     [TOOLS.CODEX]:       linkCodex,
     [TOOLS.ANTIGRAVITY]: linkAntigravity,
     [TOOLS.CURSOR]:      linkCursor,
+    [TOOLS.OPENCODE]:    linkOpencode,
 };
 
 const UNLINK_MAP: Record<string, (force: boolean) => Promise<void>> = {
@@ -32,6 +35,7 @@ const UNLINK_MAP: Record<string, (force: boolean) => Promise<void>> = {
     [TOOLS.CODEX]:       unlinkCodex,
     [TOOLS.ANTIGRAVITY]: unlinkAntigravity,
     [TOOLS.CURSOR]:      unlinkCursor,
+    [TOOLS.OPENCODE]:    unlinkOpencode,
 };
 
 export const linkCommand = async (tool?: string): Promise<void> => {
@@ -52,6 +56,7 @@ export const linkCommand = async (tool?: string): Promise<void> => {
         [TOOLS.CODEX]:       configManager.isCodexEnabled(),
         [TOOLS.ANTIGRAVITY]: configManager.isAntigravityEnabled(),
         [TOOLS.CURSOR]:      configManager.isCursorEnabled(),
+        [TOOLS.OPENCODE]:    configManager.isOpencodeEnabled(),
     };
 
     const selected = await checkbox({

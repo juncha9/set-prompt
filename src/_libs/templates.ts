@@ -16,7 +16,7 @@ This is a shared prompt repository linked to various AI agents via \`set-prompt 
 │       ├── COMMAND.md     # Platform-specific frontmatter + prompt content
 │       └── ...            # Supporting files
 ├── hooks/                 # Lifecycle shell hooks (Claude Code)
-├── agents/                # Agent definitions (Claude Code, Cursor)
+├── agents/                # Agent definitions (Claude Code, Cursor, OpenCode)
 │   └── <agent-name>/
 │       └── AGENT.md
 ├── rules/                 # Rule definitions (Cursor)
@@ -115,13 +115,21 @@ compatibility: "Requires Node.js 18+"
 metadata:
   category: "development"
 disable-model-invocation: false
+
+# OpenCode
+name: "my-skill"
+description: "What this skill does and when to use it"
+license: "MIT"
+compatibility: "opencode"
+metadata:
+  audience: "maintainers"
 ---
 \`\`\`
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
-| \`name\` | Yes | All | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). RooCode: emoji allowed. Antigravity: optional, defaults to folder name. |
-| \`description\` | Yes | All | What it does and when to use it. Claude uses this to decide auto-loading. |
+| \`name\` | Yes | All | Display name. Claude Code / OpenCode: lowercase, numbers, hyphens only (max 64 chars). RooCode: emoji allowed. Antigravity: optional, defaults to folder name. |
+| \`description\` | Yes | All | What it does and when to use it. Claude / OpenCode uses this to decide auto-loading. |
 | \`allowed-tools\` | No | Claude Code | Tools Claude can use without asking. e.g. \`Read\` \`Write\` \`Edit\` \`Bash\` \`Grep\` \`Glob\` |
 | \`model\` | No | Claude Code | Model to use when active. \`sonnet\` or \`haiku\` |
 | \`context\` | No | Claude Code | \`fork\` = run in a forked subagent context |
@@ -140,9 +148,9 @@ disable-model-invocation: false
 | \`command-dispatch\` | No | OpenClaw | \`"tool"\` = bypass model, dispatch directly to a tool |
 | \`command-tool\` | No | OpenClaw | Tool to invoke when \`command-dispatch: "tool"\` |
 | \`command-arg-mode\` | No | OpenClaw | How arguments are forwarded to the tool. (default: \`"raw"\`) |
-| \`license\` | No | Cursor | License name or reference to a bundled license file. |
-| \`compatibility\` | No | Cursor | Environment requirements (system packages, network access, etc.) |
-| \`metadata\` | No | Cursor | Arbitrary key-value mapping for additional metadata. |
+| \`license\` | No | Cursor, OpenCode | License name or reference to a bundled license file. |
+| \`compatibility\` | No | Cursor, OpenCode | Environment requirements (system packages, network access, etc.) |
+| \`metadata\` | No | Cursor, OpenCode | Arbitrary key-value mapping for additional metadata. OpenCode requires string-to-string values only. |
 
 ---
 
@@ -179,8 +187,17 @@ hooks:
 user-invocable: true
 command-dispatch: "tool"   # bypass model, dispatch directly to a tool
 command-tool: "Bash"
+
+# OpenCode
+description: "What this command does"
+template: "Run the full test suite and summarise failures for $ARGUMENTS"
+agent: build
+model: anthropic/claude-sonnet-4-20250514
+subtask: false
 ---
 \`\`\`
+
+> **OpenCode note**: \`template\` is required in the frontmatter — it's the prompt sent to the LLM when the command runs. The markdown body is ignored. Placeholders: \`$ARGUMENTS\`, \`$1\`/\`$2\`/\`$3\`, \`\` !\`cmd\` \`\` (bash output), \`@path\` (file contents).
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
@@ -193,6 +210,10 @@ command-tool: "Bash"
 | \`context\` | No | Claude Code | \`fork\` = run in a forked subagent context |
 | \`agent\` | No | Claude Code | Subagent type when \`context: fork\`. e.g. \`general-purpose\` \`Explore\` \`Plan\` |
 | \`hooks\` | No | Claude Code | Lifecycle hooks for pre/post processing. |
+| \`template\` | Yes | OpenCode | Prompt text sent to the LLM when the command runs. |
+| \`agent\` | No | OpenCode | Agent to route the command to. Defaults to the current agent. |
+| \`model\` | No | OpenCode | Overrides default model. Format: \`provider/model-id\`. |
+| \`subtask\` | No | OpenCode | \`true\` = force subagent invocation to avoid polluting main context. (default: \`false\`) |
 
 ---
 
@@ -217,18 +238,49 @@ description: "What this agent does and when to use it"
 model: inherit
 readonly: false
 is_background: false
+
+# OpenCode
+description: "Reviews code for quality and best practices"
+mode: subagent
+model: anthropic/claude-sonnet-4-20250514
+temperature: 0.1
+top_p: 0.9
+steps: 20
+color: "#FF5733"
+hidden: false
+disable: false
+tools:
+  write: false
+  edit: false
+  bash: false
+permission:
+  edit: deny
+  bash:
+    "*": ask
+    "git diff": allow
 ---
 \`\`\`
 
+> **OpenCode note**: The filename (without \`.md\`) becomes the agent ID. \`name\` is **not** a frontmatter field — don't include it.
+
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
-| \`name\` | Yes | All | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). Cursor: defaults to folder name. |
+| \`name\` | Yes | Claude Code, Cursor | Display name. Claude Code: lowercase, numbers, hyphens only (max 64 chars). Cursor: defaults to folder name. OpenCode uses the filename instead. |
 | \`description\` | Yes | All | When and how to use this agent. Used to decide when to spawn/delegate. |
 | \`allowed-tools\` | No | Claude Code | Tools this agent can use without asking |
-| \`model\` | No | All | Claude Code: \`sonnet\` or \`haiku\`. Cursor: \`fast\`, \`inherit\`, or a specific model ID. |
+| \`model\` | No | All | Claude Code: \`sonnet\` or \`haiku\`. Cursor: \`fast\`, \`inherit\`, or a specific model ID. OpenCode: \`provider/model-id\`. |
 | \`context\` | No | Claude Code | \`fork\` = run in isolated subagent context |
 | \`readonly\` | No | Cursor | \`true\` = sub-agent runs with restricted write permissions (no file edits or state-changing shell commands). (default: \`false\`) |
 | \`is_background\` | No | Cursor | \`true\` = sub-agent runs in background without blocking parent. (default: \`false\`) |
+| \`mode\` | No | OpenCode | \`primary\`, \`subagent\`, or \`all\`. (default: \`all\`) |
+| \`temperature\` | No | OpenCode | Response randomness, \`0.0\`–\`1.0\`. |
+| \`top_p\` | No | OpenCode | Alternative diversity control, \`0.0\`–\`1.0\`. |
+| \`steps\` | No | OpenCode | Max agentic iterations before forcing a text response. |
+| \`disable\` | No | OpenCode | \`true\` = disable the agent. (default: \`false\`) |
+| \`hidden\` | No | OpenCode | \`true\` = hide from \`@\` autocomplete. Subagents only. (default: \`false\`) |
+| \`color\` | No | OpenCode | Hex color (e.g. \`#FF5733\`) or theme color. |
+| \`tools\` | No | OpenCode | Per-tool enable/disable map. Supports wildcards. e.g. \`{write: false, edit: false}\` |
+| \`permission\` | No | OpenCode | Controls \`edit\`, \`bash\`, \`webfetch\`, \`task\` access. Values: \`allow\`, \`ask\`, \`deny\`. |
 
 ---
 

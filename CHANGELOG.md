@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.7.0] - 2026-04-20
+
+### Added
+- OpenCode integration (`link opencode`) — dir symlinks into `~/.config/opencode/` (OpenCode's default config directory)
+- `AGENT_PROMPT_DIRS[OPENCODE]` set to `['skills', 'commands', 'agents']` to match OpenCode's supported subdirectories
+- `OpencodeConfigSchema` + `OpencodeConfig` type + `configManager.opencode` getter/setter + `isOpencodeEnabled()`
+- `SET_PROMPT_GUIDE` template: OpenCode frontmatter reference for skills (`name`, `description`, `license`, `compatibility`, `metadata`), commands (`template` required + `agent`/`model`/`subtask`), agents (`mode`, `temperature`, `top_p`, `steps`, `tools`, `permission`, etc.)
+- Tests: `tests/commands/link-opencode.test.ts`
+
+### Changed
+- `link-command.ts`: `LINK_MAP` / `UNLINK_MAP` / `prevLinked` extended with OpenCode entry
+
+---
+
 ## [0.6.0] - 2026-04-14
 
 ### Added

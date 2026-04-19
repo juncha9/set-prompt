@@ -29,6 +29,11 @@ export const CursorConfigSchema = z.object({
     backup_path: z.string().nullish().optional(),
 });
 
+export const OpencodeConfigSchema = z.object({
+    path: z.string().nullable(),
+    backup_path: z.string().nullish().optional(),
+});
+
 export const GlobalConfigSchema = z.object({
     repo_path:   z.string(),
     remote_url:  z.string().nullable(),
@@ -38,6 +43,7 @@ export const GlobalConfigSchema = z.object({
     codex:       CodexConfigSchema.nullish().optional(),
     antigravity: AntigravityConfigSchema.nullish().optional(),
     cursor:      CursorConfigSchema.nullish().optional(),
+    opencode:    OpencodeConfigSchema.nullish().optional(),
 });
 
 export type GlobalConfig     = z.infer<typeof GlobalConfigSchema>;
@@ -47,3 +53,4 @@ export type OpenclawConfig   = z.infer<typeof OpenclawConfigSchema>;
 export type CodexConfig      = z.infer<typeof CodexConfigSchema>;
 export type AntigravityConfig = z.infer<typeof AntigravityConfigSchema>;
 export type CursorConfig      = z.infer<typeof CursorConfigSchema>;
+export type OpencodeConfig    = z.infer<typeof OpencodeConfigSchema>;
