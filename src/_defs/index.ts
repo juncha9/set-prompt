@@ -23,6 +23,9 @@ export const OPENCODE_DIR = path.join(os.homedir(), '.config', 'opencode');
 export const OPENCODE_BACKUP_DIR = path.join(OPENCODE_DIR, 'SET_PROMPT_BACKUP');
 export const GEMINICLI_DIR = path.join(os.homedir(), '.gemini');
 export const GEMINICLI_BACKUP_DIR = path.join(GEMINICLI_DIR, 'SET_PROMPT_BACKUP');
+export const HERMES_DIR = path.join(os.homedir(), '.hermes');
+export const HERMES_PLUGIN_DIR = path.join(HERMES_DIR, 'plugins', MARKET_NAME);
+export const HERMES_CONFIG_PATH = path.join(HERMES_DIR, 'config.yaml');
 
 export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks', 'agents', 'rules'] as const;
 
@@ -35,6 +38,7 @@ export enum TOOLS {
     CURSOR       = 'cursor',
     OPENCODE     = 'opencode',
     GEMINICLI    = 'geminicli',
+    HERMES       = 'hermes',
 }
 
 export type AgentId = TOOLS;
@@ -48,6 +52,7 @@ export const AGENT_PROMPT_DIRS: Record<TOOLS, readonly string[]> = {
     [TOOLS.CURSOR]:      ['skills', 'agents', 'commands', 'hooks'],
     [TOOLS.OPENCODE]:    ['skills', 'commands', 'agents'],
     [TOOLS.GEMINICLI]:   ['skills', 'commands', 'agents'],
+    [TOOLS.HERMES]:      [],
 };
 
 export const ALL_AGENTS = [
@@ -59,4 +64,5 @@ export const ALL_AGENTS = [
     { name: 'Cursor',       value: TOOLS.CURSOR },
     { name: 'OpenCode',     value: TOOLS.OPENCODE },
     { name: 'Gemini CLI',   value: TOOLS.GEMINICLI },
+    { name: 'Hermes',       value: TOOLS.HERMES },
 ] as const;

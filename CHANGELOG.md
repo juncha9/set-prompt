@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.8.0] - 2026-05-02
+
+### Added
+- **Hermes integration** (`link hermes`) — generates a Hermes plugin at `~/.hermes/plugins/set-prompt/` that loads skills, commands, and hooks directly from the registered prompt repo at Hermes startup
+  - `plugin.yaml` — Hermes plugin manifest (`name`, `version`, `description`)
+  - `__init__.py` — Python adapter generated at link time. The repo's absolute path is baked into a `REPO_DIR` constant (JSON-encoded for Windows-safe backslash handling), so no symlinks are required. At Hermes startup, `register(ctx)` walks `<repo>/skills/<name>/SKILL.md` for `ctx.register_skill()`, `<repo>/commands/*.md` for `ctx.register_command()` (handler injects the markdown body via `ctx.inject_message()`), and `<repo>/hooks/hooks.json` for `ctx.register_hook()`.
+  - Shared `hooks.json` strategy — the same `hooks/hooks.json` used by Claude Code/Cursor is reused. Only Hermes-native event keys (`pre_tool_call`, `post_tool_call`, `pre_llm_call`, `post_llm_call`, `on_session_start`, `on_session_end`, `on_session_finalize`, `on_session_reset`, `subagent_stop`, `pre_gateway_dispatch`) are picked up; other tools' keys are ignored, so a single file can drive multiple platforms.
+  - Hook command substitution: `${SET_PROMPT_REPO}` token + `SET_PROMPT_REPO` env var. Hermes hook callbacks receive a JSON payload on stdin: `{"event": "<event>", "args": [...], "kwargs": {...}}`.
+  - `~/.hermes/config.yaml` activation — created with `plugins.enabled: [set-prompt]` if absent. Existing files are never auto-modified; if `set-prompt` is missing from `enabled`, set-prompt prints the snippet for manual merge.
+- `HermesConfigSchema` + `HermesConfig` type + `configManager.hermes` getter/setter + `isHermesEnabled()`
+- `HERMES_DIR`, `HERMES_PLUGIN_DIR`, `HERMES_CONFIG_PATH` constants in `_defs`
+- `linkHermes()` / `unlinkHermes()` in `src/link/hermes.ts`
+- `SET_PROMPT_GUIDE` template: Hermes commands/hooks integration sections (set-prompt's adapter behavior, event whitelist table, payload format, decision-control caveat)
+- Tests: `tests/commands/link-hermes.test.ts` (11 cases — REPO_DIR baking, Windows backslash JSON encoding, no-symlink assertion, three config.yaml branches, unlink behavior with auto-generated vs user-authored config)
+
+### Changed
+- `status-command.ts` — added missing branches for Cursor / OpenCode / Gemini CLI / Hermes (previously fell through silently after Antigravity)
+- `uninstall-command.ts` — added missing unlink calls for OpenCode / Gemini CLI in addition to Hermes
+- `link-command.ts` description in `index.ts` — agent list extended with `hermes`
+- Test mocks updated across `link-command`, `status-command`, `uninstall-command` to cover all current `is*Enabled()` predicates and `unlink*` exports
+
+### Notes / Caveats
+- **Hermes loads plugins once at startup** — `register(ctx)` is called exactly once. Add/remove a skill, command, or hook in your repo and Hermes must be restarted to pick it up. Other tools' auto-discovery is not available here.
+- **Hermes hooks are observation-only via this bridge** — block/allow decision semantics are not propagated back to Hermes. Use platform-native hooks if you need to gate tool calls.
+- **Hermes does not auto-modify `~/.hermes/config.yaml`** — to avoid clobbering memory-provider / context-engine selections, set-prompt only writes the file when it's absent. Existing files are read-only; the user is asked to add `- set-prompt` under `plugins.enabled` manually if missing.
+- **`AGENT_PROMPT_DIRS[HERMES]` is empty** — Hermes intentionally does **not** symlink directories. The Python adapter reads from `REPO_DIR` directly, sidestepping Windows symlink/junction permission edge cases.
+
+---
+
 ## [0.7.1] - 2026-04-20
 
 ### Changed

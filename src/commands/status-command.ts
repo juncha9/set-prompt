@@ -37,6 +37,18 @@ export const statusCommand = (): void => {
         } else if (agent.value === TOOLS.ANTIGRAVITY) {
             linked = configManager.isAntigravityEnabled();
             agentPath = configManager.antigravity?.path;
+        } else if (agent.value === TOOLS.CURSOR) {
+            linked = configManager.isCursorEnabled();
+            agentPath = configManager.cursor?.path;
+        } else if (agent.value === TOOLS.OPENCODE) {
+            linked = configManager.isOpencodeEnabled();
+            agentPath = configManager.opencode?.path;
+        } else if (agent.value === TOOLS.GEMINICLI) {
+            linked = configManager.isGeminicliEnabled();
+            agentPath = configManager.geminicli?.path;
+        } else if (agent.value === TOOLS.HERMES) {
+            linked = configManager.isHermesEnabled();
+            agentPath = configManager.hermes?.path;
         }
 
         const label = linked ? chalk.green('linked') : chalk.dim('not linked');

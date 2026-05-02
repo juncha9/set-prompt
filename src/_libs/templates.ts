@@ -127,10 +127,45 @@ metadata:
 # Gemini CLI
 name: my-skill
 description: "What this skill does and when Gemini should use it"
+
+# Hermes
+name: my-skill
+description: "What this skill does and when to use it"
+version: "1.0.0"
+platforms:
+  - macos
+  - linux
+  - windows
+metadata:
+  hermes:
+    tags:
+      - python
+      - automation
+    category: devops
+    requires_toolsets:
+      - terminal
+    fallback_for_toolsets:
+      - browser
+    requires_tools:
+      - rg
+    fallback_for_tools:
+      - grep
+    config:
+      - key: my.setting
+        description: "What this controls"
+        default: "value"
+        prompt: "Prompt for setup"
+required_environment_variables:
+  - name: TENOR_API_KEY
+    prompt: "Tenor API key"
+    help: "Get a key from https://developers.google.com/tenor"
+    required_for: "full functionality"
 ---
 \`\`\`
 
 > **Gemini CLI note**: Only \`name\` and \`description\` are recognized. \`name\` must be lowercase with hyphens and match the directory name.
+
+> **Hermes note (set-prompt integration)**: Hermes does not auto-discover files in standard directories — plugins must register skills programmatically. set-prompt generates \`~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}\` on \`set-prompt link hermes\`. The \`__init__.py\` reads \`<repo>/skills/<skill-name>/SKILL.md\` directly (REPO_DIR is baked in at link time) and calls \`ctx.register_skill()\` at Hermes startup. The skill directory layout is the same as other platforms — no nested category folder.
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
@@ -156,7 +191,17 @@ description: "What this skill does and when Gemini should use it"
 | \`command-arg-mode\` | No | OpenClaw | How arguments are forwarded to the tool. (default: \`"raw"\`) |
 | \`license\` | No | Cursor, OpenCode | License name or reference to a bundled license file. |
 | \`compatibility\` | No | Cursor, OpenCode | Environment requirements (system packages, network access, etc.) |
-| \`metadata\` | No | Cursor, OpenCode | Arbitrary key-value mapping for additional metadata. OpenCode requires string-to-string values only. |
+| \`metadata\` | No | Cursor, OpenCode, Hermes | Arbitrary key-value mapping for additional metadata. OpenCode requires string-to-string values only. Hermes uses the \`metadata.hermes.*\` namespace for platform-specific fields. |
+| \`version\` | No | Hermes | Version number (e.g. \`"1.0.0"\`) |
+| \`platforms\` | No | Hermes | OS allow-list. Values: \`macos\`, \`linux\`, \`windows\`. (default: all) |
+| \`metadata.hermes.tags\` | No | Hermes | Categorization keywords array. |
+| \`metadata.hermes.category\` | No | Hermes | Skill category — should match the parent directory name. |
+| \`metadata.hermes.requires_toolsets\` | No | Hermes | Skill is hidden unless these toolsets are available. |
+| \`metadata.hermes.fallback_for_toolsets\` | No | Hermes | Skill is hidden when these toolsets are already available (acts as a fallback). |
+| \`metadata.hermes.requires_tools\` | No | Hermes | Skill is hidden unless these specific tools are available. |
+| \`metadata.hermes.fallback_for_tools\` | No | Hermes | Skill is hidden when these specific tools are already available. |
+| \`metadata.hermes.config\` | No | Hermes | Array of configuration declarations. Each entry: \`key\`, \`description\`, \`default\`, \`prompt\`. |
+| \`required_environment_variables\` | No | Hermes | Array of required env vars. Each entry: \`name\`, \`prompt\`, \`help\`, \`required_for\`. |
 
 ---
 
@@ -227,6 +272,10 @@ Include: 1) Refactored code. 2) Explanation of changes.
 **Placeholders inside the prompt**: \`{{args}}\` (user input, shell-escaped inside \`!{...}\`), \`!{cmd}\` (shell output injection, asks for confirmation), \`@{path}\` (file/dir content injection, supports images/PDFs). If \`{{args}}\` is absent, the user's text is appended to the prompt end.
 
 **Namespacing**: subdirectories create namespaced commands — \`commands/git/commit.toml\` becomes \`/git:commit\`. After edits, run \`/commands reload\` in Gemini CLI.
+
+#### Hermes commands (set-prompt integration)
+
+Hermes commands are registered programmatically. set-prompt's generated \`__init__.py\` walks \`<repo>/commands/*.md\`, parses each file's YAML frontmatter for \`name\` / \`description\`, and calls \`ctx.register_command(name, handler, description)\`. The handler injects the markdown body as a user message via \`ctx.inject_message(body, role="user")\` when the user invokes the slash command. Hermes does **not** read \`allowed-tools\`, \`model\`, \`agent\`, or other platform-specific frontmatter — only \`name\` and \`description\` are honored.
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
@@ -513,5 +562,54 @@ echo '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"
 # Cursor: deny via JSON
 echo '{"permission":"deny","user_message":"Blocked by policy","agent_message":"Not allowed"}'
 \`\`\`
+
+---
+
+#### Hermes Hooks (set-prompt integration)
+
+Hermes uses Python callbacks rather than declarative JSON — set-prompt bridges the gap by reading the **same** \`hooks/hooks.json\` used by Claude Code/Cursor, but only picks up entries whose top-level key is a Hermes event name. Other tools' keys (\`UserPromptSubmit\`, \`afterFileEdit\`, etc.) are ignored, so the file can hold hooks for multiple platforms side-by-side.
+
+\`\`\`json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [{ "type": "command", "command": "...claude-only..." }] }
+    ],
+    "pre_tool_call": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \\"\${SET_PROMPT_REPO}/hooks/audit.mjs\\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+\`\`\`
+
+**Hermes events** (whitelist applied by the generated \`__init__.py\`)
+
+| Event | When it fires |
+|-------|---------------|
+| \`pre_tool_call\` / \`post_tool_call\` | Before / after a tool runs |
+| \`pre_llm_call\` / \`post_llm_call\` | Before / after an LLM call |
+| \`on_session_start\` / \`on_session_end\` / \`on_session_finalize\` / \`on_session_reset\` | Session lifecycle |
+| \`subagent_stop\` | Subagent completes |
+| \`pre_gateway_dispatch\` | Before a gateway dispatch |
+
+**Handler fields** (only \`type: "command"\` is supported)
+
+| Field | Description |
+|-------|-------------|
+| \`type\` | Must be \`"command"\`. Other types are ignored. |
+| \`command\` | Shell command. \`\${SET_PROMPT_REPO}\` is substituted with the repo path; the \`SET_PROMPT_REPO\` env var is also set. |
+| \`timeout\` | Seconds before the subprocess is killed. Optional. |
+
+**Payload**: when the hook fires, set-prompt's runner pipes a JSON object on stdin to the command — \`{"event": "<event_name>", "args": [...], "kwargs": {...}}\`. \`args\`/\`kwargs\` mirror whatever Hermes passed to the callback (stringified via \`repr()\` for safety).
+
+**Decision control**: Hermes does not currently expose block/allow semantics through this bridge — the subprocess return value is not propagated back. Hooks are observation-only on the Hermes side.
 
 `;

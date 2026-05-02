@@ -94,6 +94,7 @@ set-prompt link antigravity  # link Antigravity only
 set-prompt link cursor       # link Cursor only
 set-prompt link opencode     # link OpenCode only
 set-prompt link geminicli    # link Gemini CLI only
+set-prompt link hermes       # link Hermes only
 ```
 
 The interactive mode shows all agents with their current state. **Check to link, uncheck to unlink** — existing directories are backed up before being replaced.
@@ -108,6 +109,7 @@ The interactive mode shows all agents with their current state. **Check to link,
 | Cursor | dir symlinks into `~/.cursor/` | `skills/`, `agents/`, `commands/`, `hooks/`, `mcp.json` (hardlink) |
 | OpenCode | dir symlinks into `~/.config/opencode/` | `skills/`, `commands/`, `agents/` |
 | Gemini CLI | dir symlinks into `~/.gemini/` | `skills/`, `commands/`, `agents/` |
+| Hermes | Python plugin adapter at `~/.hermes/plugins/set-prompt/` | `skills/`, `commands/`, `hooks/hooks.json` (read directly from repo at startup) |
 
 > **Note on Claude Code**: Operates as a plugin. Restart Claude Code after linking for the plugin to be recognized.
 
@@ -120,6 +122,8 @@ The interactive mode shows all agents with their current state. **Check to link,
 > **Note on OpenCode**: Linked at `~/.config/opencode/` — OpenCode's default config directory, so no env var setup required.
 
 > **Note on Gemini CLI**: Skills follow the standard `skills/<name>/SKILL.md` pattern. Commands use `.toml` format (not `.md`) and agents use `.md` with YAML frontmatter. Files in your repo's `commands/` must be TOML for Gemini CLI to recognize them. **Agents have strict frontmatter validation** — unknown keys (e.g. `allowed-tools`, `color`, `mode` from other platforms) cause Gemini CLI to reject the agent. See `SET_PROMPT_GUIDE.md` for the allowed keys.
+
+> **Note on Hermes**: Hermes plugins must register skills/commands/hooks programmatically — directory drop-ins are not auto-discovered. set-prompt generates a small Python adapter (`~/.hermes/plugins/set-prompt/__init__.py`) with the repo's absolute path baked in, so no symlinks are needed. **Restart Hermes after `link` (or after adding/removing a skill in your repo)** — `register()` runs only once at Hermes startup. Activation requires `set-prompt` listed under `plugins.enabled` in `~/.hermes/config.yaml` — set-prompt creates this file if absent but never modifies an existing one (it prints the snippet to add manually). Hooks are observation-only on the Hermes side: the same `hooks/hooks.json` is reused, but Hermes events (`pre_tool_call`, `on_session_start`, etc.) are picked up while Claude/Cursor keys are ignored. Hook scripts can reference `${SET_PROMPT_REPO}`.
 
 ---
 
@@ -143,7 +147,7 @@ set-prompt repo path                  # print repo location (e.g. cd "$(sppt rep
 set-prompt repo open                  # open repo in OS file manager (--code VSCode, --stree Sourcetree)
 ```
 
-Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity, OpenCode, Gemini CLI) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically.
+Symlink-based agents (Claude Code, Codex, RooCode, OpenClaw, Antigravity, OpenCode, Gemini CLI) reflect changes immediately after pull. Cursor's `mcp.json` is a hardlink to repo's `.mcp.json`, so edits to either side are reflected automatically. **Hermes** is the exception — its Python adapter only re-scans the repo at process startup, so restart Hermes after pulling new content.
 
 ---
 
@@ -231,6 +235,12 @@ set-prompt uninstall
 ├── commands/ → repo/commands   (Gemini reads *.toml)
 ├── agents/ → repo/agents       (Gemini reads *.md)
 └── antigravity/                (Antigravity's own subtree, unrelated)
+
+~/.hermes/                   # Hermes (Python plugin adapter, no symlinks)
+├── config.yaml              # plugins.enabled: [set-prompt]  (created if absent)
+└── plugins/set-prompt/
+    ├── plugin.yaml          # Hermes manifest
+    └── __init__.py          # REPO_DIR baked in; reads <repo>/{skills,commands,hooks/hooks.json} at startup
 ```
 
 ## Warning
@@ -245,6 +255,7 @@ set-prompt uninstall
 - **Cursor** — replaces directories and `mcp.json` in `~/.cursor/`
 - **OpenCode** — replaces directories in `~/.config/opencode/`
 - **Gemini CLI** — replaces directories in `~/.gemini/` (`antigravity/` subtree untouched)
+- **Hermes** — generates `~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}` and writes `~/.hermes/config.yaml` only when absent (existing files are never auto-modified)
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 

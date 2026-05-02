@@ -39,6 +39,10 @@ export const GeminicliConfigSchema = z.object({
     backup_path: z.string().nullish().optional(),
 });
 
+export const HermesConfigSchema = z.object({
+    path: z.string().nullable(),
+});
+
 export const GlobalConfigSchema = z.object({
     repo_path:   z.string(),
     remote_url:  z.string().nullable(),
@@ -50,6 +54,7 @@ export const GlobalConfigSchema = z.object({
     cursor:      CursorConfigSchema.nullish().optional(),
     opencode:    OpencodeConfigSchema.nullish().optional(),
     geminicli:   GeminicliConfigSchema.nullish().optional(),
+    hermes:      HermesConfigSchema.nullish().optional(),
 });
 
 export type GlobalConfig     = z.infer<typeof GlobalConfigSchema>;
@@ -61,3 +66,4 @@ export type AntigravityConfig = z.infer<typeof AntigravityConfigSchema>;
 export type CursorConfig      = z.infer<typeof CursorConfigSchema>;
 export type OpencodeConfig    = z.infer<typeof OpencodeConfigSchema>;
 export type GeminicliConfig   = z.infer<typeof GeminicliConfigSchema>;
+export type HermesConfig      = z.infer<typeof HermesConfigSchema>;

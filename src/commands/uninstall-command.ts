@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { confirm } from '@inquirer/prompts';
 import { HOME_DIR, CONFIG_PATH, CLAUDE_CODE_DIR } from '@/_defs';
 import { configManager } from '@/_libs/config';
-import { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity, unlinkCodex, unlinkCursor } from '@/commands/link-command';
+import { unlinkClaudeCode, unlinkRooCode, unlinkOpenclaw, unlinkAntigravity, unlinkCodex, unlinkCursor, unlinkOpencode, unlinkGeminicli, unlinkHermes } from '@/commands/link-command';
 
 export const uninstallCommand = async (): Promise<void> => {
     const targets = [
@@ -17,8 +17,11 @@ export const uninstallCommand = async (): Promise<void> => {
     const hasAntigravity = configManager.isAntigravityEnabled();
     const hasCodex       = configManager.isCodexEnabled();
     const hasCursor      = configManager.isCursorEnabled();
+    const hasOpencode    = configManager.isOpencodeEnabled();
+    const hasGeminicli   = configManager.isGeminicliEnabled();
+    const hasHermes      = configManager.isHermesEnabled();
 
-    if (targets.length === 0 && !hasClaudeCode && !hasRooCode && !hasOpenclaw && !hasAntigravity && !hasCodex && !hasCursor) {
+    if (targets.length === 0 && !hasClaudeCode && !hasRooCode && !hasOpenclaw && !hasAntigravity && !hasCodex && !hasCursor && !hasOpencode && !hasGeminicli && !hasHermes) {
         console.log(chalk.yellow('Nothing to remove.'));
         return;
     }
@@ -31,6 +34,9 @@ export const uninstallCommand = async (): Promise<void> => {
     if (hasAntigravity) { console.log(`  Antigravity symlinks ${chalk.dim('(backup will be restored)')}`); }
     if (hasCodex)       { console.log(`  Codex symlinks ${chalk.dim('(backup will be restored)')}`); }
     if (hasCursor)      { console.log(`  Cursor plugin dir ${chalk.dim('(symlink will be removed)')}`); }
+    if (hasOpencode)    { console.log(`  OpenCode symlinks ${chalk.dim('(backup will be restored)')}`); }
+    if (hasGeminicli)   { console.log(`  Gemini CLI symlinks ${chalk.dim('(backup will be restored)')}`); }
+    if (hasHermes)      { console.log(`  Hermes plugin dir ${chalk.dim('(plugin folder will be removed)')}`); }
 
     const ok = await confirm({ message: 'Proceed?', default: false });
     if (!ok) {
@@ -44,6 +50,9 @@ export const uninstallCommand = async (): Promise<void> => {
     if (hasAntigravity) { await unlinkAntigravity(true); }
     if (hasCodex)       { await unlinkCodex(true); }
     if (hasCursor)      { await unlinkCursor(true); }
+    if (hasOpencode)    { await unlinkOpencode(true); }
+    if (hasGeminicli)   { await unlinkGeminicli(true); }
+    if (hasHermes)      { await unlinkHermes(true); }
 
     for (const t of targets) {
         fs.rmSync(t.path, { recursive: true, force: true });

@@ -35,6 +35,7 @@ vi.mock('@/_libs/config', () => ({
         cursor: null,
         opencode: null,
         geminicli: null,
+        hermes: null,
         save: vi.fn(),
         isClaudeCodeEnabled: vi.fn().mockReturnValue(false),
         isRooCodeEnabled: vi.fn().mockReturnValue(false),
@@ -44,6 +45,7 @@ vi.mock('@/_libs/config', () => ({
         isCursorEnabled: vi.fn().mockReturnValue(false),
         isOpencodeEnabled: vi.fn().mockReturnValue(false),
         isGeminicliEnabled: vi.fn().mockReturnValue(false),
+        isHermesEnabled: vi.fn().mockReturnValue(false),
     }
 }));
 
@@ -70,6 +72,7 @@ describe('linkCommand (interactive)', () => {
         vi.mocked(configManager.isCursorEnabled).mockReturnValue(false);
         vi.mocked(configManager.isOpencodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isGeminicliEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isHermesEnabled).mockReturnValue(false);
         vi.mocked(configManager.save).mockReturnValue(true);
         vi.mocked(pathExists).mockResolvedValue(false);
     });

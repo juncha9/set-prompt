@@ -10,6 +10,7 @@ import { linkCodex, unlinkCodex } from '@/link/codex';
 import { linkCursor, unlinkCursor } from '@/link/cursor';
 import { linkOpencode, unlinkOpencode } from '@/link/opencode';
 import { linkGeminicli, unlinkGeminicli } from '@/link/geminicli';
+import { linkHermes, unlinkHermes } from '@/link/hermes';
 
 export { linkClaudeCode, unlinkClaudeCode } from '@/link/claudecode';
 export { linkRooCode, unlinkRooCode } from '@/link/roocode';
@@ -19,6 +20,7 @@ export { linkCodex, unlinkCodex } from '@/link/codex';
 export { linkCursor, unlinkCursor } from '@/link/cursor';
 export { linkOpencode, unlinkOpencode } from '@/link/opencode';
 export { linkGeminicli, unlinkGeminicli } from '@/link/geminicli';
+export { linkHermes, unlinkHermes } from '@/link/hermes';
 
 const LINK_MAP: Record<string, () => Promise<void>> = {
     [TOOLS.CLAUDECODE]:  linkClaudeCode,
@@ -29,6 +31,7 @@ const LINK_MAP: Record<string, () => Promise<void>> = {
     [TOOLS.CURSOR]:      linkCursor,
     [TOOLS.OPENCODE]:    linkOpencode,
     [TOOLS.GEMINICLI]:   linkGeminicli,
+    [TOOLS.HERMES]:      linkHermes,
 };
 
 const UNLINK_MAP: Record<string, (force: boolean) => Promise<void>> = {
@@ -40,6 +43,7 @@ const UNLINK_MAP: Record<string, (force: boolean) => Promise<void>> = {
     [TOOLS.CURSOR]:      unlinkCursor,
     [TOOLS.OPENCODE]:    unlinkOpencode,
     [TOOLS.GEMINICLI]:   unlinkGeminicli,
+    [TOOLS.HERMES]:      unlinkHermes,
 };
 
 export const linkCommand = async (tool?: string): Promise<void> => {
@@ -62,6 +66,7 @@ export const linkCommand = async (tool?: string): Promise<void> => {
         [TOOLS.CURSOR]:      configManager.isCursorEnabled(),
         [TOOLS.OPENCODE]:    configManager.isOpencodeEnabled(),
         [TOOLS.GEMINICLI]:   configManager.isGeminicliEnabled(),
+        [TOOLS.HERMES]:      configManager.isHermesEnabled(),
     };
 
     const selected = await checkbox({

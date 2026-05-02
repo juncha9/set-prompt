@@ -17,6 +17,9 @@ vi.mock('@/commands/link-command', () => ({
     unlinkAntigravity: vi.fn(),
     unlinkCodex:       vi.fn(),
     unlinkCursor:      vi.fn(),
+    unlinkOpencode:    vi.fn(),
+    unlinkGeminicli:   vi.fn(),
+    unlinkHermes:      vi.fn(),
 }));
 
 vi.mock('@/_libs/config', () => ({
@@ -28,6 +31,9 @@ vi.mock('@/_libs/config', () => ({
         isAntigravityEnabled: vi.fn().mockReturnValue(false),
         isCodexEnabled:       vi.fn().mockReturnValue(false),
         isCursorEnabled:      vi.fn().mockReturnValue(false),
+        isOpencodeEnabled:    vi.fn().mockReturnValue(false),
+        isGeminicliEnabled:   vi.fn().mockReturnValue(false),
+        isHermesEnabled:      vi.fn().mockReturnValue(false),
     },
 }));
 
@@ -45,6 +51,9 @@ describe('uninstallCommand', () => {
         vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(false);
         vi.mocked(configManager.isCodexEnabled).mockReturnValue(false);
         vi.mocked(configManager.isCursorEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isOpencodeEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isGeminicliEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isHermesEnabled).mockReturnValue(false);
     });
 
     it('제거할 항목 없음 → "Nothing to remove." 출력', async () => {

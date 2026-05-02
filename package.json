@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.7.1",
+    "version": "0.8.0",
     "description": "One repo. Every AI coding tool. Always in sync.",
     "main": "dist/index.js",
     "bin": {

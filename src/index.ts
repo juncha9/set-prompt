@@ -59,7 +59,7 @@ program
 
 program
     .command('link')
-    .description(`🔗 Symlink your prompt repo into an ${chalk.cyan('AI agent')} plugin dir ${chalk.dim('(claudecode | roocode | openclaw | codex | antigravity)')}`)
+    .description(`🔗 Symlink your prompt repo into an ${chalk.cyan('AI agent')} plugin dir ${chalk.dim('(claudecode | roocode | openclaw | codex | antigravity | cursor | opencode | geminicli | hermes)')}`)
     .argument('[agent]', `target agent ${chalk.dim('(omit for interactive selection)')}`)
     .action(async (agent?: string) => {
         await linkCommand(agent);
@@ -82,7 +82,7 @@ program
 
 const repo = program
     .command('repo')
-    .description(`🗂️  Manage the installed prompt repo ${chalk.dim('(status | pull | commit | push | save | path | open)')}`);
+    .description(`🗂️  Manage the installed prompt repo ${chalk.dim('(status | pull/update | commit | push | save | path | open)')}`);
 
 repo
     .command('status')
@@ -102,6 +102,7 @@ Example output:
 
 repo
     .command('pull')
+    .alias('update')
     .description(`🔄 Fetch and pull the latest changes from the ${chalk.cyan('remote repo')}`)
     .action(() => {
         repoPullCommand();

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CLAUDE_CODE_DIR, ROO_DIR } from '@/_defs';
+import { CLAUDE_CODE_DIR, ROO_DIR, HERMES_PLUGIN_DIR } from '@/_defs';
 
 vi.mock('@/_libs/config', () => ({
     configManager: {
@@ -10,11 +10,19 @@ vi.mock('@/_libs/config', () => ({
         openclaw: null,
         codex: null,
         antigravity: null,
-        isClaudeCodeEnabled: vi.fn().mockReturnValue(false),
-        isRooCodeEnabled: vi.fn().mockReturnValue(false),
-        isOpenclawEnabled: vi.fn().mockReturnValue(false),
-        isCodexEnabled: vi.fn().mockReturnValue(false),
+        cursor: null,
+        opencode: null,
+        geminicli: null,
+        hermes: null,
+        isClaudeCodeEnabled:  vi.fn().mockReturnValue(false),
+        isRooCodeEnabled:     vi.fn().mockReturnValue(false),
+        isOpenclawEnabled:    vi.fn().mockReturnValue(false),
+        isCodexEnabled:       vi.fn().mockReturnValue(false),
         isAntigravityEnabled: vi.fn().mockReturnValue(false),
+        isCursorEnabled:      vi.fn().mockReturnValue(false),
+        isOpencodeEnabled:    vi.fn().mockReturnValue(false),
+        isGeminicliEnabled:   vi.fn().mockReturnValue(false),
+        isHermesEnabled:      vi.fn().mockReturnValue(false),
     }
 }));
 
@@ -36,11 +44,19 @@ describe('statusCommand', () => {
         configManager.openclaw = null;
         configManager.codex = null;
         configManager.antigravity = null;
+        configManager.cursor = null;
+        configManager.opencode = null;
+        configManager.geminicli = null;
+        configManager.hermes = null;
         vi.mocked(configManager.isClaudeCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isRooCodeEnabled).mockReturnValue(false);
         vi.mocked(configManager.isOpenclawEnabled).mockReturnValue(false);
         vi.mocked(configManager.isCodexEnabled).mockReturnValue(false);
         vi.mocked(configManager.isAntigravityEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isCursorEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isOpencodeEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isGeminicliEnabled).mockReturnValue(false);
+        vi.mocked(configManager.isHermesEnabled).mockReturnValue(false);
     });
 
     it('repo_path 없음 → "No repo installed." 출력', () => {
@@ -112,6 +128,18 @@ describe('statusCommand', () => {
         const output = consoleSpy.mock.calls.flat().join('\n');
         expect(output).toContain('linked');
         expect(output).toContain(ROO_DIR);
+    });
+
+    it('hermes 링크됨 → linked + path 출력', () => {
+        configManager.repo_path = '/fake/repo';
+        configManager.hermes = { path: HERMES_PLUGIN_DIR };
+        vi.mocked(configManager.isHermesEnabled).mockReturnValue(true);
+
+        statusCommand();
+
+        const output = consoleSpy.mock.calls.flat().join('\n');
+        expect(output).toContain('linked');
+        expect(output).toContain(HERMES_PLUGIN_DIR);
     });
 
     it('미링크 에이전트 → "not linked" 출력', () => {
