@@ -14,7 +14,6 @@
     "scripts": {
         "start:dev": "tsx src/index.ts",
         "build": "rimraf dist && tsup",
-        "publish": "npm run build && npm publish",
         "test": "vitest --reporter=verbose"
     },
     "keywords": [
