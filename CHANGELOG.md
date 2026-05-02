@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.8.2] - 2026-05-02
+
+### Fixed
+- **Hermes `register_skill` argument types** — fixed `'str' object has no attribute 'exists'` error that surfaced after enabling the plugin in Hermes. The generated `__init__.py` was passing `str(skill_path)` (the skill directory as a string), but Hermes's `ctx.register_skill(name, path)` expects:
+  1. A `pathlib.Path` object (not a string)
+  2. The path to `SKILL.md` itself (not the parent directory)
+  Verified against the official "Build a Hermes plugin" guide example. Now passes `skill_path / "SKILL.md"` as a `Path`.
+- **Hermes command handler signature** — handler is now defined as `handler(raw_args: str = "") -> Optional[str]` matching the documented Hermes signature (previously `handler(_args=None)`).
+- **Slash commands silent in gateway/TUI mode** — `ctx.inject_message()` is documented as **CLI-mode only** (returns `False` in gateway mode). The handler now falls back to **returning the markdown body** as the command's response when `inject_message` is unavailable, so the content is still visible to the user instead of being silently dropped.
+- **`register_command` now uses keyword arguments** (`handler=`, `description=`) to match the official Hermes plugin examples (e.g. `disk-cleanup`) and stay robust if Hermes reorders positional parameters.
+
+### Notes
+- After upgrading, re-run `set-prompt link hermes` to regenerate `__init__.py`, then restart Hermes. The plugin should now load with `✓ set-prompt v1.0` and skills become loadable via `skill_view("set-prompt:<name>")` (plugin skills are opt-in explicit loads — they do not appear in Hermes's auto-listed `available_skills` index).
+- Hook callbacks remain `def runner(*args, **kwargs)` — Hermes documents that all hook callbacks should accept `**kwargs` for forward compatibility, and the bridge's role is purely to forward the payload to the user-defined hook command via stdin JSON.
+
+---
+
 ## [0.8.1] - 2026-05-02
 
 ### Changed

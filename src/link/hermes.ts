@@ -64,8 +64,18 @@ def _parse_frontmatter(text):
 
 
 def _make_command_handler(ctx, body):
-    def handler(_args=None):
-        ctx.inject_message(body, role="user")
+    # Hermes calls handlers as handler(raw_args: str) -> Optional[str].
+    # Primary path: inject the markdown body as a user message (CLI mode).
+    # Fallback: in gateway mode inject_message returns False — return the body
+    # as the handler response so the content is at least visible to the user.
+    def handler(raw_args=""):
+        try:
+            ok = ctx.inject_message(body, role="user")
+        except Exception:
+            ok = False
+        if not ok:
+            return body
+        return None
     return handler
 
 
@@ -134,9 +144,11 @@ def register(ctx):
         for skill_path in sorted(skills_dir.iterdir()):
             if not skill_path.is_dir():
                 continue
-            if not (skill_path / "SKILL.md").exists():
+            skill_md = skill_path / "SKILL.md"
+            if not skill_md.exists():
                 continue
-            ctx.register_skill(skill_path.name, str(skill_path))
+            # Hermes expects (name, Path-to-SKILL.md), not (name, dir-as-str).
+            ctx.register_skill(skill_path.name, skill_md)
 
     commands_dir = REPO_DIR / "commands"
     if commands_dir.exists():
@@ -148,7 +160,11 @@ def register(ctx):
             meta, body = _parse_frontmatter(text)
             name = meta.get("name") or cmd_file.stem
             description = meta.get("description") or ""
-            ctx.register_command(name, _make_command_handler(ctx, body), description)
+            ctx.register_command(
+                name,
+                handler=_make_command_handler(ctx, body),
+                description=description,
+            )
 
     _register_hooks(ctx)
 `;

@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.8.1",
+    "version": "0.8.2",
     "description": "One repo. Every AI coding tool. Always in sync.",
     "main": "dist/index.js",
     "bin": {
@@ -31,7 +31,8 @@
         "cursor",
         "codex",
         "opencode",
-        "gemini-cli"
+        "gemini-cli",
+        "hermes"
     ],
     "author": "juncha9 (https://github.com/juncha9)",
     "license": "MIT",

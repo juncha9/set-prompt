@@ -165,7 +165,7 @@ required_environment_variables:
 
 > **Gemini CLI note**: Only \`name\` and \`description\` are recognized. \`name\` must be lowercase with hyphens and match the directory name.
 
-> **Hermes note (set-prompt integration)**: Hermes does not auto-discover files in standard directories — plugins must register skills programmatically. set-prompt generates \`~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}\` on \`set-prompt link hermes\`. The \`__init__.py\` reads \`<repo>/skills/<skill-name>/SKILL.md\` directly (REPO_DIR is baked in at link time) and calls \`ctx.register_skill()\` at Hermes startup. The skill directory layout is the same as other platforms — no nested category folder.
+> **Hermes note (set-prompt integration)**: Hermes does not auto-discover files in standard directories — plugins must register skills programmatically. set-prompt generates \`~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}\` on \`set-prompt link hermes\`. The \`__init__.py\` reads \`<repo>/skills/<skill-name>/SKILL.md\` directly (REPO_DIR is baked in at link time) and calls \`ctx.register_skill(name, Path(SKILL.md))\` at Hermes startup. The skill directory layout is the same as other platforms — no nested category folder. **Plugin skills are opt-in explicit loads** — they do not appear in Hermes's auto-listed \`available_skills\` index; load via \`skill_view("set-prompt:<skill-name>")\`.
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
@@ -275,7 +275,7 @@ Include: 1) Refactored code. 2) Explanation of changes.
 
 #### Hermes commands (set-prompt integration)
 
-Hermes commands are registered programmatically. set-prompt's generated \`__init__.py\` walks \`<repo>/commands/*.md\`, parses each file's YAML frontmatter for \`name\` / \`description\`, and calls \`ctx.register_command(name, handler, description)\`. The handler injects the markdown body as a user message via \`ctx.inject_message(body, role="user")\` when the user invokes the slash command. Hermes does **not** read \`allowed-tools\`, \`model\`, \`agent\`, or other platform-specific frontmatter — only \`name\` and \`description\` are honored.
+Hermes commands are registered programmatically. set-prompt's generated \`__init__.py\` walks \`<repo>/commands/*.md\`, parses each file's YAML frontmatter for \`name\` / \`description\`, and calls \`ctx.register_command(name, handler=..., description=...)\`. The handler tries to inject the markdown body as a user message via \`ctx.inject_message(body, role="user")\` when the slash command is invoked. **\`inject_message\` is CLI-mode only** — in gateway/TUI mode it returns \`False\`, and the handler falls back to **returning the body** as the command's response so the content is still visible. Hermes does **not** read \`allowed-tools\`, \`model\`, \`agent\`, or other platform-specific frontmatter — only \`name\` and \`description\` are honored.
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
