@@ -24,7 +24,7 @@ export const OPENCODE_BACKUP_DIR = path.join(OPENCODE_DIR, 'SET_PROMPT_BACKUP');
 export const GEMINICLI_DIR = path.join(os.homedir(), '.gemini');
 export const GEMINICLI_BACKUP_DIR = path.join(GEMINICLI_DIR, 'SET_PROMPT_BACKUP');
 export const HERMES_DIR = path.join(os.homedir(), '.hermes');
-export const HERMES_PLUGIN_DIR = path.join(HERMES_DIR, 'plugins', MARKET_NAME);
+export const HERMES_PLUGIN_DIR = path.join(HERMES_DIR, 'plugins', PLUGIN_NAME);
 export const HERMES_CONFIG_PATH = path.join(HERMES_DIR, 'config.yaml');
 
 export const PROMPT_DIR_NAMES = ['skills', 'commands', 'hooks', 'agents', 'rules'] as const;

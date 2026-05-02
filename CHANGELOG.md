@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.8.3] - 2026-05-02
+
+### Changed
+- **Hermes plugin renamed `set-prompt` → `sppt`** for ergonomics. Plugin skills are loaded via `skill_view("sppt:<name>")` instead of the longer `skill_view("set-prompt:<name>")`. Internally aligned with the rest of set-prompt where every other agent already uses `PLUGIN_NAME = "sppt"` as the plugin identifier (Claude Code, Codex, etc.) — Hermes was the lone outlier still using `MARKET_NAME = "set-prompt"`.
+  - Plugin directory: `~/.hermes/plugins/set-prompt/` → `~/.hermes/plugins/sppt/`
+  - `plugin.yaml` `name`: `set-prompt` → `sppt`
+  - `~/.hermes/config.yaml` `plugins.enabled` entry: `- set-prompt` → `- sppt`
+
+### Added
+- **Post-link guidance** — `set-prompt link hermes` now prints a hint explaining that plugin skills don't appear in `/skills list` (Hermes policy) and shows the explicit qualified-load form: `skill_view("sppt:<skill-name>")`. This addresses the common confusion of "the link succeeded but my skills aren't showing up" — they're registered, just opt-in via qualified namespace as documented by Hermes.
+
+---
+
 ## [0.8.2] - 2026-05-02
 
 ### Fixed
@@ -16,7 +29,7 @@ All notable changes to this project will be documented in this file.
 - **`register_command` now uses keyword arguments** (`handler=`, `description=`) to match the official Hermes plugin examples (e.g. `disk-cleanup`) and stay robust if Hermes reorders positional parameters.
 
 ### Notes
-- After upgrading, re-run `set-prompt link hermes` to regenerate `__init__.py`, then restart Hermes. The plugin should now load with `✓ set-prompt v1.0` and skills become loadable via `skill_view("set-prompt:<name>")` (plugin skills are opt-in explicit loads — they do not appear in Hermes's auto-listed `available_skills` index).
+- After upgrading, re-run `set-prompt link hermes` to regenerate `__init__.py`, then restart Hermes. The plugin should now load with `✓ sppt v1.0` (renamed from `set-prompt` in 0.8.3) and skills become loadable via `skill_view("sppt:<name>")` (plugin skills are opt-in explicit loads — they do not appear in Hermes's auto-listed `available_skills` index).
 - Hook callbacks remain `def runner(*args, **kwargs)` — Hermes documents that all hook callbacks should accept `**kwargs` for forward compatibility, and the bridge's role is purely to forward the payload to the user-defined hook command via stdin JSON.
 
 ---

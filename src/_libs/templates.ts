@@ -165,7 +165,7 @@ required_environment_variables:
 
 > **Gemini CLI note**: Only \`name\` and \`description\` are recognized. \`name\` must be lowercase with hyphens and match the directory name.
 
-> **Hermes note (set-prompt integration)**: Hermes does not auto-discover files in standard directories — plugins must register skills programmatically. set-prompt generates \`~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}\` on \`set-prompt link hermes\`. The \`__init__.py\` reads \`<repo>/skills/<skill-name>/SKILL.md\` directly (REPO_DIR is baked in at link time) and calls \`ctx.register_skill(name, Path(SKILL.md))\` at Hermes startup. The skill directory layout is the same as other platforms — no nested category folder. **Plugin skills are opt-in explicit loads** — they do not appear in Hermes's auto-listed \`available_skills\` index; load via \`skill_view("set-prompt:<skill-name>")\`.
+> **Hermes note (set-prompt integration)**: Hermes does not auto-discover files in standard directories — plugins must register skills programmatically. set-prompt generates \`~/.hermes/plugins/sppt/{plugin.yaml, __init__.py}\` on \`set-prompt link hermes\`. The \`__init__.py\` reads \`<repo>/skills/<skill-name>/SKILL.md\` directly (REPO_DIR is baked in at link time) and calls \`ctx.register_skill(name, Path(SKILL.md))\` at Hermes startup. The skill directory layout is the same as other platforms — no nested category folder. **Plugin skills don't appear in \`/skills list\`** (Hermes policy — plugin skills are opt-in explicit loads). Load with the qualified namespace: \`skill_view("sppt:<skill-name>")\` — e.g. \`skill_view("sppt:dev-base")\`.
 
 | Field | Required | Platform | Description |
 |-------|----------|----------|-------------|
