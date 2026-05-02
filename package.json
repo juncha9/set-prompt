@@ -1,6 +1,6 @@
 {
     "name": "set-prompt",
-    "version": "0.8.0",
+    "version": "0.8.1",
     "description": "One repo. Every AI coding tool. Always in sync.",
     "main": "dist/index.js",
     "bin": {
@@ -14,6 +14,7 @@
     "scripts": {
         "start:dev": "tsx src/index.ts",
         "build": "rimraf dist && tsup",
+        "publish": "npm run build && npm publish",
         "test": "vitest --reporter=verbose"
     },
     "keywords": [
@@ -51,6 +52,7 @@
         "ora": "^9.3.0",
         "smol-toml": "^1.6.0",
         "typia": "^11.0.3",
+        "yaml": "^2.8.4",
         "zod": "^4.3.6"
     },
     "devDependencies": {

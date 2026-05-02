@@ -106,7 +106,7 @@ describe('linkHermes', () => {
         expect(after).toBe(original);
     });
 
-    it('config.yaml 존재 + set-prompt 미포함 → 파일 보존(자동 수정 안 함)', async () => {
+    it('config.yaml 존재 + set-prompt 미포함 → set-prompt 자동 추가 + 다른 항목 보존', async () => {
         configManager.repo_path = '/fake/repo';
         const original = 'plugins:\n  enabled:\n    - other\n';
         vol.mkdirSync(path.dirname(HERMES_CONFIG_PATH), { recursive: true });
@@ -115,7 +115,49 @@ describe('linkHermes', () => {
         await linkHermes();
 
         const after = vol.readFileSync(HERMES_CONFIG_PATH, 'utf-8') as string;
-        expect(after).toBe(original);
+        expect(after).toContain('- other');
+        expect(after).toContain(`- ${MARKET_NAME}`);
+    });
+
+    it('config.yaml 존재 + plugins 키 없음 → plugins.enabled 추가', async () => {
+        configManager.repo_path = '/fake/repo';
+        const original = 'other_section:\n  foo: bar\n';
+        vol.mkdirSync(path.dirname(HERMES_CONFIG_PATH), { recursive: true });
+        vol.writeFileSync(HERMES_CONFIG_PATH, original);
+
+        await linkHermes();
+
+        const after = vol.readFileSync(HERMES_CONFIG_PATH, 'utf-8') as string;
+        expect(after).toContain('foo: bar');
+        expect(after).toContain('plugins:');
+        expect(after).toContain(`- ${MARKET_NAME}`);
+    });
+
+    it('config.yaml 존재 + plugins.enabled 키 없음 → enabled 추가', async () => {
+        configManager.repo_path = '/fake/repo';
+        const original = 'plugins:\n  disabled:\n    - other\n';
+        vol.mkdirSync(path.dirname(HERMES_CONFIG_PATH), { recursive: true });
+        vol.writeFileSync(HERMES_CONFIG_PATH, original);
+
+        await linkHermes();
+
+        const after = vol.readFileSync(HERMES_CONFIG_PATH, 'utf-8') as string;
+        expect(after).toContain('- other');
+        expect(after).toContain('enabled:');
+        expect(after).toContain(`- ${MARKET_NAME}`);
+    });
+
+    it('config.yaml 코멘트 보존 (yaml 라이브러리 사용)', async () => {
+        configManager.repo_path = '/fake/repo';
+        const original = '# my custom config\nplugins:\n  enabled:\n    - other\n';
+        vol.mkdirSync(path.dirname(HERMES_CONFIG_PATH), { recursive: true });
+        vol.writeFileSync(HERMES_CONFIG_PATH, original);
+
+        await linkHermes();
+
+        const after = vol.readFileSync(HERMES_CONFIG_PATH, 'utf-8') as string;
+        expect(after).toContain('# my custom config');
+        expect(after).toContain(`- ${MARKET_NAME}`);
     });
 
     it('성공 시 configManager.hermes에 path 저장', async () => {
@@ -153,9 +195,22 @@ describe('unlinkHermes', () => {
         expect(vol.existsSync(HERMES_CONFIG_PATH)).toBe(false);
     });
 
-    it('사용자 작성 config.yaml(헤더 없음) → 보존', async () => {
+    it('사용자 작성 config.yaml(헤더 없음) → 파일 보존, set-prompt 엔트리만 제거', async () => {
         vol.mkdirSync(HERMES_PLUGIN_DIR, { recursive: true });
         const userConfig = `plugins:\n  enabled:\n    - ${MARKET_NAME}\n    - other\n`;
+        vol.writeFileSync(HERMES_CONFIG_PATH, userConfig);
+
+        await unlinkHermes(true);
+
+        expect(vol.existsSync(HERMES_CONFIG_PATH)).toBe(true);
+        const after = vol.readFileSync(HERMES_CONFIG_PATH, 'utf-8') as string;
+        expect(after).not.toContain(`- ${MARKET_NAME}`);
+        expect(after).toContain('- other');
+    });
+
+    it('사용자 작성 config.yaml에 set-prompt 미포함 → 파일 그대로 보존', async () => {
+        vol.mkdirSync(HERMES_PLUGIN_DIR, { recursive: true });
+        const userConfig = `plugins:\n  enabled:\n    - other\n`;
         vol.writeFileSync(HERMES_CONFIG_PATH, userConfig);
 
         await unlinkHermes(true);

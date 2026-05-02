@@ -123,7 +123,7 @@ The interactive mode shows all agents with their current state. **Check to link,
 
 > **Note on Gemini CLI**: Skills follow the standard `skills/<name>/SKILL.md` pattern. Commands use `.toml` format (not `.md`) and agents use `.md` with YAML frontmatter. Files in your repo's `commands/` must be TOML for Gemini CLI to recognize them. **Agents have strict frontmatter validation** — unknown keys (e.g. `allowed-tools`, `color`, `mode` from other platforms) cause Gemini CLI to reject the agent. See `SET_PROMPT_GUIDE.md` for the allowed keys.
 
-> **Note on Hermes**: Hermes plugins must register skills/commands/hooks programmatically — directory drop-ins are not auto-discovered. set-prompt generates a small Python adapter (`~/.hermes/plugins/set-prompt/__init__.py`) with the repo's absolute path baked in, so no symlinks are needed. **Restart Hermes after `link` (or after adding/removing a skill in your repo)** — `register()` runs only once at Hermes startup. Activation requires `set-prompt` listed under `plugins.enabled` in `~/.hermes/config.yaml` — set-prompt creates this file if absent but never modifies an existing one (it prints the snippet to add manually). Hooks are observation-only on the Hermes side: the same `hooks/hooks.json` is reused, but Hermes events (`pre_tool_call`, `on_session_start`, etc.) are picked up while Claude/Cursor keys are ignored. Hook scripts can reference `${SET_PROMPT_REPO}`.
+> **Note on Hermes**: Hermes plugins must register skills/commands/hooks programmatically — directory drop-ins are not auto-discovered. set-prompt generates a small Python adapter (`~/.hermes/plugins/set-prompt/__init__.py`) with the repo's absolute path baked in, so no symlinks are needed. **Restart Hermes after `link` (or after adding/removing a skill in your repo)** — `register()` runs only once at Hermes startup. Activation requires `set-prompt` listed under `plugins.enabled` in `~/.hermes/config.yaml` — set-prompt writes this entry automatically (creating the file when absent, or appending to the existing list while preserving other entries and comments via AST-based YAML editing with backup/rollback). Hooks are observation-only on the Hermes side: the same `hooks/hooks.json` is reused, but Hermes events (`pre_tool_call`, `on_session_start`, etc.) are picked up while Claude/Cursor keys are ignored. Hook scripts can reference `${SET_PROMPT_REPO}`.
 
 ---
 
@@ -255,7 +255,7 @@ set-prompt uninstall
 - **Cursor** — replaces directories and `mcp.json` in `~/.cursor/`
 - **OpenCode** — replaces directories in `~/.config/opencode/`
 - **Gemini CLI** — replaces directories in `~/.gemini/` (`antigravity/` subtree untouched)
-- **Hermes** — generates `~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}` and writes `~/.hermes/config.yaml` only when absent (existing files are never auto-modified)
+- **Hermes** — generates `~/.hermes/plugins/set-prompt/{plugin.yaml, __init__.py}` and adds `set-prompt` to `~/.hermes/config.yaml` under `plugins.enabled` (creates the file when absent; appends to the existing list while preserving other entries and comments)
 
 Before making any changes, `set-prompt` creates a backup and rolls back automatically on failure. However, you should be aware that:
 
